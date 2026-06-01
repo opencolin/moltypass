@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+10 complete (revoke merged to main; ws/picker still active)
-- Phase: v0.5.0-alpha + revoke in main (76/76 green). Picker is the last v1.0 workstream before v0.9.0-beta tag.
+- Tick: T+13 complete (picker merged → main; v0.9.0-beta tagged)
+- Phase: v0.9.0-beta on main with 97/97 tests. Only ws/release remains to reach v1.0.0.
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -24,8 +24,9 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 | audit         | v1.0     | ✅ MERGED to main | — (torn down) | wire audit emits into proxy.ts/permissions.ts/consent.ts during integration tick |
 | security      | v1.0     | ✅ MERGED to main | — (torn down) | wire vault.ts to new header; HKDF for IDB at-rest in T+6+ |
 | detector      | v1.0     | ✅ MERGED to main | — (torn down at T+7) | done; runtime registerContentScripts for custom providers can land in v1.1 |
-| picker        | v1.0     | IN_PROGRESS   | `moltypass-picker/` (ws/picker) @ `79fcfd7` — 63/63 green (overlay only) | write `src/content/picker.ts` entry + `chrome.commands` wiring + `chrome.contextMenus` handler + capture-channel post; merge → v0.9.0-beta tag |
-| revoke        | v1.0     | ✅ MERGED to main | — (torn down at T+10) | done (revocation + rotation + proxy wiring); follow-up: popup-handler revoke-grant/key/origin + rotate-key messages |
+| picker        | v1.0     | ✅ MERGED to main | — (torn down at T+13) | done — overlay + entry + bridge + manifest commands/contextMenus |
+| revoke        | v1.0     | ✅ MERGED to main | — (torn down at T+10) | done — revocation + rotation + proxy wiring |
+| release       | v1.0     | TODO          | — (spin at T+14) | first file: `scripts/release.ts` (semver bump + manifest/package sync). Also: `web/app/privacy/page.tsx`, `store/listing.md`, `.github/workflows/release.yml`, `scripts/zip-extension.ts`. CI test-gate already in main from test-infra. |
 | release       | v1.0     | TODO          | — (spin in W6) | CI workflow already in main as part of test-infra; release.ts script + CWS assets remain |
 | detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
 | picker        | v1.0     | TODO          | —                                     | spin after detector (shares `src/background/capture.ts`) |

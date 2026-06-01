@@ -219,3 +219,17 @@ T+9 onward: real 30s cadence. Each tick may land one compound work unit instead 
 - Merged ws/revoke → main. 76/76 still green on main. Tore down `moltypass-revoke` worktree.
 - v0.9.0-beta tag deferred until picker also lands (council schedule pairs picker + revoke for that release).
 - Only ws/picker remains active. Picker has overlay (63/63) but needs the entry script + chrome.commands + chrome.contextMenus + capture-channel posting.
+
+---
+
+## T+11–13 · picker workstream + v0.9.0-beta milestone
+
+- T+11 (tick 13–15): `src/content/picker.ts` entry — `handlePickerMessage(start|cancel)` with single-instance overlay, Escape→postCancel, picker.cancel→silent teardown. 7 tests. Two bugs caught in initial test draft about cancel semantics. ws/picker `@00ba545`.
+- T+12 (tick 17–19): `src/background/picker-bridge.ts` — onPickerCommand (chrome.commands), onContextMenuClick (chrome.contextMenus selection context), installContextMenu. DI-shaped + chained optional chaining to survive partial fake-chrome mocks. 8 tests. Updated `vite.config.ts` with `contextMenus` perm + `commands` section (Cmd/Ctrl+Shift+M → start-element-picker). ws/picker `@5b370d5`.
+- T+13 (tick 21): merged ws/picker → main. **97/97 tests green on main**. **Tagged v0.9.0-beta**. Tore down `moltypass-picker` worktree.
+
+Three tags now: v0.1.0-internal, v0.5.0-alpha, v0.9.0-beta.
+
+Only the release workstream remains to reach v1.0.0:
+- CI test-gate already in main from test-infra workstream.
+- Need: `scripts/release.ts` (semver bump + manifest/package sync), `scripts/zip-extension.ts`, `scripts/release-notes.ts`, `web/app/privacy/page.tsx`, `store/listing.md` (Chrome Web Store copy + permission justifications), `.github/workflows/release.yml` (on-tag).
