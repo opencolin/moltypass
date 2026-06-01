@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+3 complete (3 work cycles: a + b + c; verification cycle exposed + fixed pnpm 11 friction)
-- Phase: test-infra gate verified live (4/4 tests + grep PASS); audit/security ready to verify on T+4
+- Tick: T+4 complete (3 work cycles: merge test-infra+audit, merge security, tag v0.1.0-internal)
+- Phase: v0.1.0-internal tagged with 17/17 tests green; first-wave done; second-wave starts T+5
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -20,9 +20,13 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 | ws            | scope    | status        | worktree                              | next action |
 |---------------|----------|---------------|---------------------------------------|---|
-| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ `2a23d78` ✅ gate green | Add Playwright config for content scripts (gates detector/picker work) |
-| audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit) @ `924475a` | Wire audit emits into the existing proxy.ts/permissions.ts/consent.ts; add audit-retention.spec.ts; add audit-migrate.spec.ts |
-| security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security) @ `8e326dd` | Wire vault.ts to use new vault-crypto header schema; add Argon2id integration smoke (deferred to e2e); HKDF helper for IDB at-rest encryption |
+| test-infra    | v1.0     | ✅ MERGED to main | — (torn down) | done; Playwright comes with detector workstream |
+| audit         | v1.0     | ✅ MERGED to main | — (torn down) | wire audit emits into proxy.ts/permissions.ts/consent.ts during integration tick |
+| security      | v1.0     | ✅ MERGED to main | — (torn down) | wire vault.ts to new header; HKDF for IDB at-rest in T+6+ |
+| detector      | v1.0     | TODO          | — (spin in T+5) | first file: `src/content/key-scan.ts` per workstream plan |
+| picker        | v1.0     | TODO          | — (spin after detector) | shares `src/background/capture.ts` with detector |
+| revoke        | v1.0     | TODO          | — (spin after audit integration) | needs audit emits wired first so revoke audit-events flow correctly |
+| release       | v1.0     | TODO          | — (spin in W6) | CI workflow already in main as part of test-infra; release.ts script + CWS assets remain |
 | detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
 | picker        | v1.0     | TODO          | —                                     | spin after detector (shares `src/background/capture.ts`) |
 | revoke        | v1.0     | TODO          | —                                     | spin after audit lands (needs audit events for revoke kind) |

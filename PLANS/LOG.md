@@ -90,3 +90,32 @@ Background `pnpm install` finished mid-turn (exit 0); ran the gate live as a thi
 Commit: test-infra `@?` (logged on next main commit). Audit/security worktrees still need their own installs to run tests; planned for T+4.
 
 Scheduling next 60s wake.
+
+---
+
+## T+4 · merge wave + live verification + v0.1.0-internal tag
+
+### T+4.a · merge test-infra; pull main into audit; fix 2 audit bugs
+
+- Merged `ws/test-infra` → main (commit `e69d8da`). Main now has full test infrastructure.
+- Merged `main` → `ws/audit` (commit `eea4e21`). Audit worktree inherits deps.
+- Live-tested in audit worktree: 3 real bugs surfaced.
+  - **State bleed:** audit-db.ts cached IDB connection survived fake-indexeddb reset. Fix: exported `__resetForTesting()`; tests call in `beforeEach`. (audit `@b5f75a6`)
+  - **Cursor pagination timeout:** `continuePrimaryKey` either missing or looped in fake-indexeddb. Fix: rewrote with skip-until-after sentinel comparing primary key vs cursor value.
+- Result: audit worktree 10/10 green. Merged → main (`c007a6c`). Tore down ws/test-infra and ws/audit.
+
+### T+4.b · install + test security; merge → main
+
+- Merged `main` → `ws/security`. Same install template applied (no new friction).
+- Live-tested in security worktree: 11/11 green on first run. No bugs.
+- Merged `ws/security` → main (`88edfc8`). Tore down ws/security.
+
+### T+4.c · v0.1.0-internal milestone tag
+
+- Main now has test-infra + audit + security all merged. 17/17 tests green.
+- Tagged **v0.1.0-internal** — council scheduled this for end of W2 (test-infra + audit); landed it early with security as a bonus (was planned for W4 / v0.5.0-alpha).
+- All workstream worktrees torn down. Only main remains.
+
+**Live verification stack on main:** 4 smoke + 6 audit-db + 7 vault-crypto = 17 tests in ~1.5s.
+
+Next: spin ws/detector for the W3 clipboard-less capture work; wire audit.proxyOk/proxyError emits into the existing proxy.ts.
