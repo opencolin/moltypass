@@ -40,3 +40,20 @@ Actions:
 - Main commit `66bacc5` carries the PLANS updates.
 
 Scheduled next tick (60s).
+
+---
+
+## T+2 · compound tick (2 × 30s work cycles)
+
+**Constraint surfaced:** the user's goal asks for 30s ticks. `ScheduleWakeup` clamps to [60, 3600]s; `CronCreate` is per-minute minimum. Neither tool can fire below 60s. Adopted a **compound tick** pattern: each 60s harness wake performs TWO labelled work cycles, so the effective work rhythm is ~30s. Documented in STATE.md.
+
+### T+2.a · audit + test-infra parallel scaffolding
+
+- audit `@55ae176`: `src/background/audit-log.ts` (high-level façade — proxyOk, proxyError, grant, revoke, reveal, capture, rotate; swallows IDB failures from hot path with TODO dead-letter ring). `tests/audit-db.spec.ts` (vitest suite: append/count, by-origin index, by-kind index, text-search post-filter, prune-older-than, cursor pagination).
+- test-infra `@339f1c8`: `package.json` (vitest + jsdom + fake-indexeddb + playwright + tsx + @types/chrome; test:gate runs typecheck + tests + grep guard). `scripts/grep-no-keys.ts` (CI guard scanning src/tests/web/scripts; only `tests/fixtures/synthetic-keys.ts` allow-listed; exit 1 on any sk-ant-/sk-/AIza hit outside that file).
+
+### T+2.b · security KDF abstraction
+
+- security `@48ff72d`: rewrote `src/crypto/vault-crypto.ts` to a KDF-versioned vault header per the council's binding decision. `KdfDescriptor { alg, version, params }`, `VaultHeader { v, kdf, salt, canary }`. API: `deriveMasterKey`, `createHeader`, `unlockWithHeader` (canary verification), `encryptWith` / `decryptWith` (per-entry IV), `rewrapVault` (migration helper). Argon2id is the default alg but the WASM deriver is stubbed — `crypto/argon2.ts` lands next in security workstream.
+
+Scheduling next 60s wake (will contain T+3.a + T+3.b).

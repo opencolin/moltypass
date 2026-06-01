@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+2 (heading into)
-- Phase: First-wave worktree initial commits done; advancing per-ws scaffolding
+- Tick: T+2 complete (2 work cycles done: a + b)
+- Phase: First-wave foundation laid in all three worktrees; integration work next
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -20,9 +20,9 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 | ws            | scope    | status        | worktree                              | next action |
 |---------------|----------|---------------|---------------------------------------|---|
-| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ `5d6df40` | Add package.json devDeps + scripts; write grep-no-keys.ts; write example.spec.ts smoke test |
-| audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit) @ `bd89c5c` | Write `audit-log.ts` facade + integrate audit emits in proxy.ts/permissions.ts/consent.ts |
-| security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security) @ `7fd6f97` | Write `src/crypto/vault-crypto.ts` with KDF abstraction + `src/crypto/argon2.ts` WASM wrapper |
+| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ `339f1c8` | Write `tests/example.spec.ts` smoke test; wire `.github/workflows/test-gate.yml`; verify `pnpm test:gate` actually runs (needs pnpm install) |
+| audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit) @ `55ae176` | Integrate audit emits in proxy.ts/permissions.ts/consent.ts; build retention sweep module; legacy chrome.storage.local replay |
+| security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security) @ `48ff72d` | Write `src/crypto/argon2.ts` (WASM wrapper, lazy load via hash-wasm); add `tests/vault-crypto.spec.ts` (round-trip + rewrap test); update vault.ts to use new header schema |
 | detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
 | picker        | v1.0     | TODO          | —                                     | spin after detector (shares `src/background/capture.ts`) |
 | revoke        | v1.0     | TODO          | —                                     | spin after audit lands (needs audit events for revoke kind) |
@@ -66,3 +66,13 @@ If you are a future agent (or human) picking this up cold:
 - Council decisions live at `PLANS/council/<topic>-decision.md`.
 - Release scope lives at `PLANS/releases/v<x.y.z>.md`.
 - **Merge gate (all v1.0 workstreams):** `pnpm typecheck` + `pnpm test` + `pnpm test:gate` (key-shape grep) green; at least one unit test per new business-logic module.
+
+## Tick cadence — 60s wake + 30s compound
+
+The user's goal asks for 30-second ticks. The harness `ScheduleWakeup` clamps to a `[60, 3600]` second range and `CronCreate` is per-minute minimum — **neither tool can fire below 60s**. The compromise:
+
+- **Wake cadence:** 60s (harness floor).
+- **Work cadence:** 30s — each wake performs TWO labelled work cycles (`Tn.a` and `Tn.b`) in the same turn, separated by real coding work.
+- **Effective rhythm:** one logged advance every ~30s, two per harness wake.
+
+Each `Tn.a` / `Tn.b` cycle appears as its own LOG entry so the rhythm is auditable. The wake itself is logged once per Tn.
