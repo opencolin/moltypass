@@ -20,7 +20,7 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 | ws            | scope    | status        | worktree                              | next action |
 |---------------|----------|---------------|---------------------------------------|---|
-| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ (post-T+3.c, log on next main commit) | Gate verified live 4/4 green + grep PASS. Next: add Playwright config for content scripts (gates detector/picker work) |
+| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ `2a23d78` ✅ gate green | Add Playwright config for content scripts (gates detector/picker work) |
 | audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit) @ `924475a` | Wire audit emits into the existing proxy.ts/permissions.ts/consent.ts; add audit-retention.spec.ts; add audit-migrate.spec.ts |
 | security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security) @ `8e326dd` | Wire vault.ts to use new vault-crypto header schema; add Argon2id integration smoke (deferred to e2e); HKDF helper for IDB at-rest encryption |
 | detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
