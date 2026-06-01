@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+4 complete (3 work cycles: merge test-infra+audit, merge security, tag v0.1.0-internal)
-- Phase: v0.1.0-internal tagged with 17/17 tests green; first-wave done; second-wave starts T+5
+- Tick: T+5 complete (a: wire audit→proxy on main; b: spin ws/detector with key-scan)
+- Phase: integration in main (21/21) + detector worktree active (32/32 with key-scan)
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -23,7 +23,7 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 | test-infra    | v1.0     | ✅ MERGED to main | — (torn down) | done; Playwright comes with detector workstream |
 | audit         | v1.0     | ✅ MERGED to main | — (torn down) | wire audit emits into proxy.ts/permissions.ts/consent.ts during integration tick |
 | security      | v1.0     | ✅ MERGED to main | — (torn down) | wire vault.ts to new header; HKDF for IDB at-rest in T+6+ |
-| detector      | v1.0     | TODO          | — (spin in T+5) | first file: `src/content/key-scan.ts` per workstream plan |
+| detector      | v1.0     | IN_PROGRESS   | `moltypass-detector/` (ws/detector) @ (post-T+5.b) | write `detector-banner.ts` + `capture.ts` (background); spec for capture flow |
 | picker        | v1.0     | TODO          | — (spin after detector) | shares `src/background/capture.ts` with detector |
 | revoke        | v1.0     | TODO          | — (spin after audit integration) | needs audit emits wired first so revoke audit-events flow correctly |
 | release       | v1.0     | TODO          | — (spin in W6) | CI workflow already in main as part of test-infra; release.ts script + CWS assets remain |

@@ -119,3 +119,30 @@ Scheduling next 60s wake.
 **Live verification stack on main:** 4 smoke + 6 audit-db + 7 vault-crypto = 17 tests in ~1.5s.
 
 Next: spin ws/detector for the W3 clipboard-less capture work; wire audit.proxyOk/proxyError emits into the existing proxy.ts.
+
+---
+
+## T+5 · compound tick (a: audit integration on main; b: detector spin)
+
+### T+5.a · wire audit emits into proxy.ts (integration on main, no worktree)
+
+Modified `src/background/proxy.ts` to accept an optional `ProxyAuditContext { origin, grantId?, keyFingerprint?, keyLabel? }`. Emits:
+- 2xx upstream → `auditLog.proxyOk` (status, pathPreview, latencyMs, bytesUp/Down)
+- 4xx/5xx → `auditLog.proxyError`
+- fetch throws → `auditLog.proxyError(status:0, error: msg)` then re-throws
+
+Emits are fire-and-forget (`void`) so the hot path never blocks on IDB writes. `ProxyResponse` gains `latencyMs` for caller display.
+
+Wrote `tests/proxy.spec.ts` with 4 integration cases (2xx, 429, fetch reject, no-context skip). vault.getKeyPlaintext mocked at the module boundary. **21/21 green on main** (`0ba2318`).
+
+### T+5.b · spin ws/detector + key-scan + 11 tests
+
+- Spun `moltypass-detector` worktree on `ws/detector` from main.
+- Wrote `src/content/key-scan.ts`: `findKeyInSubtree(root, shape)` with TreeWalker + hidden-subtree skip + first-match-in-document-order; `isInsideDialog(el)` heuristic (role=dialog / aria-modal=true / <dialog>).
+- Wrote `tests/key-scan.spec.ts` with 11 cases across 3 providers.
+- Live-tested: 31/32 first run, 1 bug found.
+  - **Anchored regex vs substring scan:** provider `keyShape` is `/^...$/` for full-string validation; my walker tried to match anchored regex against text nodes containing prefixes ("API key: AIza..."). The Anthropic and OpenAI tests passed because their fixtures put the key in its own element (anchored worked); Gemini's `<p>API key: AIza...</p>` failed.
+  - Fix: `unanchor(re)` strips leading `^` and trailing `$` before scanning. Background capture handler will re-validate the matched substring against the original anchored shape before vault storage — defense in depth.
+- After fix: **32/32 green** in detector worktree.
+
+Scheduling next 60s wake. Next plan: T+6.a write `src/content/detector-banner.ts` (Shadow DOM banner) + `src/background/capture.ts` (background handler); T+6.b add capture.spec.ts + content-script entry wiring.
