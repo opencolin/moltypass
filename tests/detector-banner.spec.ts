@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mountSaveBanner } from '../src/content/detector-banner';
 
 beforeEach(() => {
-  document.body.innerHTML = '';
+  document.body.replaceChildren();
 });
 
 function findInClosedShadow(role: string): HTMLElement | null {
