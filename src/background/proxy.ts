@@ -10,6 +10,12 @@ import type { ProviderId } from '../shared/types';
 import { PROVIDERS } from '../shared/providers';
 import { getKeyPlaintext } from './vault';
 import { auditLog } from './audit-log';
+import {
+  readEpoch,
+  registerInFlight,
+  unregisterInFlight,
+  RevokedError,
+} from './revocation';
 
 export interface ProxyResponse {
   status: number;
@@ -58,6 +64,15 @@ export async function proxyRequest(
   const bytesUp = requestBody?.length ?? 0;
   const startedAt = Date.now();
 
+  // Revocation guard: read the epoch before the fetch. After the
+  // response resolves we re-read; mismatch means the user (or rotateKey)
+  // revoked the grant while the call was in flight, and we must NOT
+  // surface the response to the page.
+  const epochBefore = await readEpoch();
+  const abortCtrl = new AbortController();
+  const grantId = audit?.grantId;
+  if (grantId) registerInFlight(grantId, abortCtrl);
+
   let res: Response;
   try {
     res = await fetch(url, {
@@ -65,9 +80,23 @@ export async function proxyRequest(
       headers: safeHeaders,
       body: requestBody,
       credentials: 'omit',
+      signal: abortCtrl.signal,
     });
   } catch (err) {
     const latencyMs = Date.now() - startedAt;
+    if (grantId) unregisterInFlight(grantId, abortCtrl);
+    // If abort was triggered by a revoke (epoch changed), surface
+    // RevokedError instead of the underlying AbortError — callers
+    // distinguish revocation from network failure.
+    if (abortCtrl.signal.aborted && (await readEpoch()) !== epochBefore) {
+      if (audit) {
+        void auditLog.proxyError({
+          ...audit, service, keyId, status: 0, pathPreview: path,
+          latencyMs, bytesUp, bytesDown: 0, error: 'revoked',
+        });
+      }
+      throw new RevokedError(grantId);
+    }
     if (audit) {
       void auditLog.proxyError({
         ...audit,
@@ -89,6 +118,21 @@ export async function proxyRequest(
   const text = await res.text();
   const latencyMs = Date.now() - startedAt;
   const bytesDown = text.length;
+
+  if (grantId) unregisterInFlight(grantId, abortCtrl);
+
+  // Post-fetch revocation check: epoch changed between the call start
+  // and the response arrival. Refuse to return the response.
+  const epochAfter = await readEpoch();
+  if (epochAfter !== epochBefore) {
+    if (audit) {
+      void auditLog.proxyError({
+        ...audit, service, keyId, status: res.status, pathPreview: path,
+        latencyMs, bytesUp, bytesDown, error: 'revoked',
+      });
+    }
+    throw new RevokedError(grantId);
+  }
 
   if (audit) {
     if (res.status < 400) {

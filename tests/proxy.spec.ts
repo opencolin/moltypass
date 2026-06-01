@@ -15,9 +15,11 @@ vi.mock('../src/background/vault', () => ({
 
 import { proxyRequest } from '../src/background/proxy';
 import { query, __resetForTesting as resetAuditDb } from '../src/background/audit-db';
+import { bumpEpoch, RevokedError } from '../src/background/revocation';
 
-beforeEach(() => {
+beforeEach(async () => {
   resetAuditDb();
+  await chrome.storage.local.clear();
   vi.restoreAllMocks();
 });
 
@@ -99,5 +101,52 @@ describe('proxyRequest + audit emit integration', () => {
     await new Promise(r => setTimeout(r, 0));
     const events = await query({});
     expect(events.records).toHaveLength(0);
+  });
+});
+
+describe('proxyRequest + revocation epoch', () => {
+  it('throws RevokedError when the epoch bumps during the fetch (post-fetch check)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      await bumpEpoch();
+      return new Response('{"data":"leaked?"}', { status: 200 });
+    });
+
+    await expect(proxyRequest(
+      'anthropic', 'k-1', '/v1/messages', 'POST', {}, {},
+      { origin: 'https://example.test', grantId: 'g-1' },
+    )).rejects.toBeInstanceOf(RevokedError);
+
+    await new Promise(r => setTimeout(r, 0));
+    const events = await query({ kinds: ['proxy.error'] });
+    expect(events.records).toHaveLength(1);
+    expect(events.records[0]!.meta?.['error']).toBe('revoked');
+  });
+
+  it('throws RevokedError when bumpEpoch aborts an in-flight fetch', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_url, init) => {
+      return new Promise<Response>((_resolve, reject) => {
+        const signal = (init as RequestInit | undefined)?.signal;
+        signal?.addEventListener('abort', () => {
+          reject(new DOMException('aborted', 'AbortError'));
+        });
+      });
+    });
+
+    const inflight = proxyRequest(
+      'anthropic', 'k-1', '/v1/messages', 'POST', {}, {},
+      { origin: 'https://example.test', grantId: 'g-7' },
+    );
+    await new Promise(r => setTimeout(r, 0));
+    await bumpEpoch();
+    await expect(inflight).rejects.toBeInstanceOf(RevokedError);
+  });
+
+  it('completes normally when epoch unchanged across the fetch', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"ok":true}', { status: 200 }));
+    const res = await proxyRequest(
+      'anthropic', 'k-1', '/v1/messages', 'POST', {}, {},
+      { origin: 'https://example.test', grantId: 'g-x' },
+    );
+    expect(res.status).toBe(200);
   });
 });
