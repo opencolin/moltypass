@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+13 complete (picker merged → main; v0.9.0-beta tagged)
-- Phase: v0.9.0-beta on main with 97/97 tests. Only ws/release remains to reach v1.0.0.
+- Tick: T+15 complete (release merged → main; **v1.0.0 tagged**)
+- Phase: v1.0.0 launched. 127/127 tests. Council's v1.0 scope fully reached. Next: v2.0 workstreams (auth + dashboard + enterprise-sw + leak per council T+1) — all currently DEFERRED status, ready to spin.
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
