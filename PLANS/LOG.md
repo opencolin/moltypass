@@ -168,3 +168,29 @@ Dependency-injected handler — `CaptureDeps { isVaultUnlocked, askForConfirmati
 6 tests: host attaches to body, single-instance replacement, idempotent destroy, Save click fires `onSave` + destroys, Dismiss click fires `onDismiss` + destroys, plaintext candidate never appears in `host.outerHTML` (the closed-shadow security property).
 
 **Worktree state:** ws/detector now has key-scan + capture + banner with 47/47 tests green. Next tick: detector content-script entry that wires it together + content-script-injected runtime registration + merge prep.
+
+---
+
+## T+7 · compound tick (a: detector entry; b: merge + v0.5.0-alpha)
+
+### T+7.a · src/content/detector.ts + 10 tests + manifest update
+
+Wrote `startDetector(ctx)` and `detectProviderFromHost(host)`. MutationObserver on `document.body` (childList + subtree); on each batch of added nodes, finds dialog ancestors (role=dialog / aria-modal=true / <dialog>) and runs key-scan inside them. First match triggers the Shadow DOM banner. Re-banner protection — same candidate within the same lifetime doesn't re-prompt.
+
+Production boot is gated by `__moltypass_detector_test` global so unit tests can import without auto-starting an observer.
+
+Updated `vite.config.ts` to add a second `content_scripts` entry matching the three provider key-creation URLs at `document_idle`.
+
+10 detector entry tests + flipped two test files from `innerHTML=''` to `replaceChildren()` (consistent "no innerHTML anywhere in detector code" policy after the security-guidance plugin flag).
+
+Detector worktree: **57/57 green** (`4458a91`).
+
+### T+7.b · merge + v0.5.0-alpha tag
+
+- Merged `ws/detector` → main. 57/57 green on main after merge.
+- **Tagged v0.5.0-alpha** — council scheduled security + detector for W4 / v0.5.0-alpha; both landed.
+- Tore down `moltypass-detector` worktree.
+
+**Main status:** v0.1.0-internal + v0.5.0-alpha both tagged. 8 test files, 57 tests, ~1.8s wall-clock.
+
+Next: T+8 spins ws/picker (Cmd+Shift+M + right-click context menu) and ws/revoke in parallel.

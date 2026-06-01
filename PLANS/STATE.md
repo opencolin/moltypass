@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+6 complete (a: capture handler; b: Shadow DOM banner)
-- Phase: detector worktree at 47/47 (key-scan + capture + banner); T+7 wires entry point + merges
+- Tick: T+7 complete (a: detector entry; b: merge + v0.5.0-alpha tag)
+- Phase: v0.5.0-alpha tagged; T+8 spins ws/picker and ws/revoke in parallel for the W5 v0.9.0-beta milestone
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -23,9 +23,9 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 | test-infra    | v1.0     | ✅ MERGED to main | — (torn down) | done; Playwright comes with detector workstream |
 | audit         | v1.0     | ✅ MERGED to main | — (torn down) | wire audit emits into proxy.ts/permissions.ts/consent.ts during integration tick |
 | security      | v1.0     | ✅ MERGED to main | — (torn down) | wire vault.ts to new header; HKDF for IDB at-rest in T+6+ |
-| detector      | v1.0     | IN_PROGRESS   | `moltypass-detector/` (ws/detector) @ (post-T+6.b) — 47/47 green | write `src/content/detector.ts` entry (MutationObserver wiring) + manifest content_scripts + runtime registerContentScripts for custom detectors; T+7 merge candidate |
-| picker        | v1.0     | TODO          | — (spin after detector) | shares `src/background/capture.ts` with detector |
-| revoke        | v1.0     | TODO          | — (spin after audit integration) | needs audit emits wired first so revoke audit-events flow correctly |
+| detector      | v1.0     | ✅ MERGED to main | — (torn down at T+7) | done; runtime registerContentScripts for custom providers can land in v1.1 |
+| picker        | v1.0     | TODO          | — (spin at T+8) | first file: `src/shared/capture-types.ts` (CaptureCandidate, message contracts). Shares `src/background/capture.ts` (already in main from detector). |
+| revoke        | v1.0     | TODO          | — (spin at T+8) | first file: `src/background/revocation.ts` (epoch + AbortController registry + RevokedError). Audit emits already wired in proxy.ts. |
 | release       | v1.0     | TODO          | — (spin in W6) | CI workflow already in main as part of test-infra; release.ts script + CWS assets remain |
 | detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
 | picker        | v1.0     | TODO          | —                                     | spin after detector (shares `src/background/capture.ts`) |
