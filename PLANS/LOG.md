@@ -57,3 +57,25 @@ Scheduled next tick (60s).
 - security `@48ff72d`: rewrote `src/crypto/vault-crypto.ts` to a KDF-versioned vault header per the council's binding decision. `KdfDescriptor { alg, version, params }`, `VaultHeader { v, kdf, salt, canary }`. API: `deriveMasterKey`, `createHeader`, `unlockWithHeader` (canary verification), `encryptWith` / `decryptWith` (per-entry IV), `rewrapVault` (migration helper). Argon2id is the default alg but the WASM deriver is stubbed — `crypto/argon2.ts` lands next in security workstream.
 
 Scheduling next 60s wake (will contain T+3.a + T+3.b).
+
+---
+
+## T+3 · compound tick (2 × 30s work cycles)
+
+### T+3.a · retention + Argon2id WASM + smoke spec
+
+- audit `@924475a`: `audit-retention.ts` (registerRetentionAlarm/isRetentionAlarm/sweep — daily chrome.alarms-driven 365-day prune; idempotent on every SW wake).
+- security `@8e326dd`: `crypto/argon2.ts` (hash-wasm lazy-loaded Argon2id; deriveArgon2idKey returns a non-extractable AES-GCM CryptoKey; isArgon2idAvailable probe for PBKDF2 fallback decision).
+- test-infra `@b60ba8e`: `tests/example.spec.ts` (4 smoke cases: chrome.storage round-trip, alarm fire, IDB round-trip, per-test reset).
+
+### T+3.b · legacy replay + crypto tests + CI workflow
+
+- audit (folded into `@924475a`): `audit-migrate.ts` — replayOnce reads legacy `chrome.storage.local['moltypass.audit.tail']`, strict kind/source allow-lists drop malformed entries, sets migration flag BEFORE deleting legacy key (crash-safe against double import).
+- security (folded into `@8e326dd`): `tests/vault-crypto.spec.ts` — 7 PBKDF2-path cases (round-trip, wrong-password null, encrypt/decrypt, IV randomness, tamper rejection via AES-GCM tag, rewrapVault fresh salt, header carries Argon2id params).
+- test-infra (folded into `@b60ba8e`): `.github/workflows/test-gate.yml` — pnpm install → typecheck → vitest → grep-no-keys. No untrusted-input interpolation. Playwright deferred until detector/picker need it live.
+
+### T+3.c · live verification (in background)
+
+Launched `pnpm install` in `moltypass-test-infra/` so we can actually run `pnpm test` on the next wake instead of just trusting it compiles. The next tick reads the install result and decides whether to run the tests or fix dep resolution.
+
+Scheduling next 60s wake.

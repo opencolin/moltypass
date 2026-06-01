@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+2 complete (2 work cycles done: a + b)
-- Phase: First-wave foundation laid in all three worktrees; integration work next
+- Tick: T+3 complete (2 work cycles + live install kicked off)
+- Phase: First-wave foundation + retention + Argon2id WASM + tests; verification next
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -20,9 +20,9 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 | ws            | scope    | status        | worktree                              | next action |
 |---------------|----------|---------------|---------------------------------------|---|
-| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ `339f1c8` | Write `tests/example.spec.ts` smoke test; wire `.github/workflows/test-gate.yml`; verify `pnpm test:gate` actually runs (needs pnpm install) |
-| audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit) @ `55ae176` | Integrate audit emits in proxy.ts/permissions.ts/consent.ts; build retention sweep module; legacy chrome.storage.local replay |
-| security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security) @ `48ff72d` | Write `src/crypto/argon2.ts` (WASM wrapper, lazy load via hash-wasm); add `tests/vault-crypto.spec.ts` (round-trip + rewrap test); update vault.ts to use new header schema |
+| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ `b60ba8e` | Verify `pnpm test` green after install completes (background bash); add Playwright config for content scripts |
+| audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit) @ `924475a` | Wire audit emits into the existing proxy.ts/permissions.ts/consent.ts; add audit-retention.spec.ts; add audit-migrate.spec.ts |
+| security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security) @ `8e326dd` | Wire vault.ts to use new vault-crypto header schema; add Argon2id integration smoke (deferred to e2e); HKDF helper for IDB at-rest encryption |
 | detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
 | picker        | v1.0     | TODO          | —                                     | spin after detector (shares `src/background/capture.ts`) |
 | revoke        | v1.0     | TODO          | —                                     | spin after audit lands (needs audit events for revoke kind) |
