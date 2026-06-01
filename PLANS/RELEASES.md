@@ -1,31 +1,35 @@
 # Moltypass — Release plan v0.1 → v2.0
 
-Each release is bounded by exit criteria. Per-release detail lives at `PLANS/releases/v<x.y.z>.md`.
+**Council-decided T+1.** See [council/v1-scope-decision.md](council/v1-scope-decision.md).
 
 | Version | Code-name | Target | Scope |
 |---|---|---|---|
-| **v0.1.0** | Foundation | end of W1 | Vault + per-origin consent + proxy mode (already sketched) + IDB audit log. Internal-only. |
-| **v0.2.0** | Revoke | end of W2 | Add: revoke (per-grant/per-key/per-origin) + key rotation + revocation epoch + abort-in-flight. |
-| **v0.3.0** | Capture | end of W3 | Add: provider key-creation detector + element picker + context-menu save. Clipboard-less in all three paths. |
-| **v0.4.0** | Audit UI | end of W3 | Polished sharing-dashboard with revoke, rotate, anomaly sidebar (Signal B local volume baseline). |
-| **v0.5.0** | Enterprise bridge | end of W4 | Add: chrome.storage.managed bootstrap + IDB outbox + policy enforcement. Inert for personal users. |
-| **v0.6.0** | Web foundation | end of W4 | Hosted collector + admin dashboard (overview, grants, keys, devices, anomalies, policy, tokens) with magic-link auth. |
-| **v0.9.0** | Hardening | end of W5 | Argon2id KDF (with PBKDF2 fallback) + IDB-at-rest encryption + collector replay protection (nonce + timestamped Bearer). |
-| **v1.0.0** | Public launch | end of W6 | Chrome Web Store submission. CI pipeline. /privacy + permission justifications. Vercel Rolling Releases. Error reporting off by default. |
-| **v1.1.0** | Polish | W7 | Bug-fix follow-ups from W6 review. Address Web Store reviewer feedback. |
-| **v1.2.0** | More providers | W8 | Mistral, Cohere, Together, Groq. Custom provider registration UI. |
-| **v1.3.0** | Leak Signal A | W9 | Promote Signal A (provider-usage polling) from advisory/beta to GA. Add Anthropic Admin + OpenAI usage endpoints. |
-| **v2.0.0** | **Council deciding.** | W10+ | Major next milestone — candidates: multi-browser (Firefox+Safari), mobile companion, MCP server bridge, agent orchestration mode. |
+| **v0.1.0-internal** | Foundation | end of W2 | `test-infra` + `audit`. Vault + per-origin consent + proxy mode (existing sketch) + IDB audit log with the merge gate working. Internal builds only. |
+| **v0.5.0-alpha** | Hardened capture | end of W4 | Adds `security` (Argon2id WASM + KDF-version field + encrypted IDB + SECURITY.md) and `detector` (clipboard-less capture from provider key-creation pages). Alpha builds; trusted external testers. |
+| **v0.9.0-beta** | Universal capture + revoke | end of W5 | Adds `picker` (Cmd+Shift+M + right-click selection save) and `revoke` (per-grant/per-key/per-origin + key rotation + revocation epoch). Public beta. |
+| **v1.0.0** | Public launch | end of W6 | Adds `release` (CI, /privacy, Chrome Web Store assets, version-lockstep script, Vercel Rolling Releases). **Chrome Web Store submission.** |
+| **v2.0.0** | Open + enterprise control plane | W10 | `auth` + `dashboard` + `enterprise-sw` + `leak`. Hosted control plane as one B2B bundle: Resend magic-link → workspace → Stripe (~$8-12/seat/mo); admin fleet visibility; chrome.storage.managed policy enforcement; Signal A + B leak detection; open-source the proxy + crypto core; first-class self-host/Docker. |
 
 ## Release exit criteria template
 
 For every version, the per-release file specifies:
-- **In:** what's shipped
+- **In:** what's shipped (workstream ids + concrete features)
 - **Out:** explicitly cut from this release
-- **Exit criteria:** the bar (tests pass, manual smoke pass, dependent workstreams green)
+- **Exit criteria:** the bar (tests pass, manual smoke, dependents green)
 - **Risks:** what could slip the release
 - **Rollback:** how to back out if found to be bad
 
 ## Versioning rule
 
 Strict semver. The release script in `release` workstream keeps `manifest.json` and `package.json` in sync. Never bump by hand.
+
+## v1.0 launch invariants (council red lines)
+
+These must hold at v1.0 release. Any workstream that violates them blocks the release:
+1. **IndexedDB encrypted at rest** with a vault-key-derived subkey. No plaintext on disk.
+2. **KDF-version field** in the vault header. Migration-path-preserving.
+3. **No key bytes** in any audit entry, log, telemetry, or crash dump. CI grep-enforced.
+4. **Clipboard-less capture** stays clipboard-less in detector AND picker paths.
+5. **Revocation epoch** enforced; stale-epoch requests rejected; every revoke audit-logged.
+6. **SECURITY.md** + coordinated-disclosure channel published.
+7. **Test gate green** on every PR (typecheck + vitest + grep-no-keys).
