@@ -1,0 +1,41 @@
+name: test-gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Invoke binaries directly to bypass pnpm 11's verify-deps-before-run
+      # pre-check, which conflicts with our esbuild build-script allow-list.
+      # The pnpm scripts are kept for documentation; CI calls .bin/ directly.
+
+      - name: Typecheck
+        run: ./node_modules/.bin/tsc --noEmit
+
+      - name: Unit tests
+        run: ./node_modules/.bin/vitest run
+
+      - name: Key-shape grep guard
+        run: ./node_modules/.bin/tsx scripts/grep-no-keys.ts
+
+      # Playwright runs only when the extension itself has changed to
+      # keep PR feedback fast. Wire on a separate matrix once the
+      # detector/picker workstreams need the rig live.

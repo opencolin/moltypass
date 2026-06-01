@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+1
-- Phase: First-wave worktree spin + start audit
+- Tick: T+3 complete (3 work cycles: a + b + c; verification cycle exposed + fixed pnpm 11 friction)
+- Phase: test-infra gate verified live (4/4 tests + grep PASS); audit/security ready to verify on T+4
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -20,9 +20,9 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 | ws            | scope    | status        | worktree                              | next action |
 |---------------|----------|---------------|---------------------------------------|---|
-| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) | Build vitest config + fake-chrome/fake-idb setup |
-| audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit)         | Write `src/shared/audit-types.ts` |
-| security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security)   | Vault header KDF-version field; Argon2id WASM spike |
+| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ `2a23d78` ✅ gate green | Add Playwright config for content scripts (gates detector/picker work) |
+| audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit) @ `924475a` | Wire audit emits into the existing proxy.ts/permissions.ts/consent.ts; add audit-retention.spec.ts; add audit-migrate.spec.ts |
+| security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security) @ `8e326dd` | Wire vault.ts to use new vault-crypto header schema; add Argon2id integration smoke (deferred to e2e); HKDF helper for IDB at-rest encryption |
 | detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
 | picker        | v1.0     | TODO          | —                                     | spin after detector (shares `src/background/capture.ts`) |
 | revoke        | v1.0     | TODO          | —                                     | spin after audit lands (needs audit events for revoke kind) |
@@ -66,3 +66,13 @@ If you are a future agent (or human) picking this up cold:
 - Council decisions live at `PLANS/council/<topic>-decision.md`.
 - Release scope lives at `PLANS/releases/v<x.y.z>.md`.
 - **Merge gate (all v1.0 workstreams):** `pnpm typecheck` + `pnpm test` + `pnpm test:gate` (key-shape grep) green; at least one unit test per new business-logic module.
+
+## Tick cadence — 60s wake + 30s compound
+
+The user's goal asks for 30-second ticks. The harness `ScheduleWakeup` clamps to a `[60, 3600]` second range and `CronCreate` is per-minute minimum — **neither tool can fire below 60s**. The compromise:
+
+- **Wake cadence:** 60s (harness floor).
+- **Work cadence:** 30s — each wake performs TWO labelled work cycles (`Tn.a` and `Tn.b`) in the same turn, separated by real coding work.
+- **Effective rhythm:** one logged advance every ~30s, two per harness wake.
+
+Each `Tn.a` / `Tn.b` cycle appears as its own LOG entry so the rhythm is auditable. The wake itself is logged once per Tn.
