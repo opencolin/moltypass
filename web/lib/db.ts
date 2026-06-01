@@ -20,9 +20,66 @@ export const organizations = pgTable('organizations', {
   id: uuid('id').primaryKey().defaultRandom(),
   slug: text('slug').notNull().unique(),
   name: text('name').notNull(),
-  plan: text('plan', { enum: ['team', 'enterprise'] }).notNull().default('team'),
+  plan: text('plan', { enum: ['free', 'team', 'enterprise'] }).notNull().default('team'),
+  // Stripe linkage (v2.0). Optional — populated when the org upgrades
+  // through the checkout flow.
+  stripeCustomerId: text('stripe_customer_id'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  subscriptionStatus: text('subscription_status', {
+    enum: ['trialing', 'active', 'past_due', 'canceled', 'incomplete'],
+  }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Users sign in via Resend magic-link. Email is canonical identity;
+// citext would be ideal but we lowercase on write to keep the schema
+// portable.
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  },
+  t => ({ emailIdx: uniqueIndex('users_email_idx').on(t.email) }),
+);
+
+// A user can be a member of multiple orgs (consultants, multi-tenancy).
+// role determines what they can see and do in the dashboard.
+export const memberships = pgTable(
+  'memberships',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['admin', 'viewer', 'billing'] }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => ({
+    uniq: uniqueIndex('memberships_user_org_idx').on(t.userId, t.orgId),
+    byOrg: index('memberships_org_idx').on(t.orgId),
+  }),
+);
+
+// Magic-link tokens. Stored as SHA-256 hash — the raw token only ever
+// lives in the email we send. Single-use (consumedAt nulls out the
+// path) and short-TTL (expiresAt enforced at verify time).
+export const magicLinkTokens = pgTable(
+  'magic_link_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => ({
+    hashIdx: uniqueIndex('magic_link_hash_idx').on(t.tokenHash),
+    byEmail: index('magic_link_email_idx').on(t.email),
+  }),
+);
 
 // Long-lived per-org tokens used by the extension. Stored as SHA-256
 // hashes; the raw token is shown once on creation and never again.
@@ -97,6 +154,46 @@ export const policies = pgTable('policies', {
   config: jsonb('config').notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Every write action taken in the admin dashboard is logged here.
+// Append-only; transactional with the write it records (per dashboard
+// workstream council T+1).
+export const adminActions = pgTable(
+  'admin_actions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    // Either a session-authenticated user OR an API token took the action.
+    actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
+    actorTokenId: uuid('actor_token_id').references(() => apiTokens.id, { onDelete: 'set null' }),
+    action: text('action').notNull(), // 'policy.save', 'token.issue', 'token.revoke', ...
+    targetType: text('target_type'),  // 'policy', 'token', 'membership', ...
+    targetId: text('target_id'),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => ({
+    byOrgTs: index('admin_actions_org_ts_idx').on(t.orgId, t.createdAt),
+    byAction: index('admin_actions_org_action_ts_idx').on(t.orgId, t.action, t.createdAt),
+  }),
+);
+
+// Collector replay protection (security workstream v2 follow-up).
+// Each ingest request carries an issued-at timestamp + single-use
+// nonce; the verify guard rejects if (nonce, orgId) is already in
+// the table, then inserts with a TTL.
+export const ingestNonces = pgTable(
+  'ingest_nonces',
+  {
+    orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+    nonce: text('nonce').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  t => ({
+    pk: uniqueIndex('ingest_nonces_pk').on(t.orgId, t.nonce),
+    byExpires: index('ingest_nonces_expires_idx').on(t.expiresAt),
+  }),
+);
 
 // ----- runtime client -----
 
