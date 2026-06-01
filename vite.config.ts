@@ -14,7 +14,16 @@ const manifest = defineManifest({
   description:
     'Encrypted vault for AI service API keys. Per-origin consent. Keys never enter the page.',
   minimum_chrome_version: '120',
-  permissions: ['storage', 'alarms', 'tabs'],
+  permissions: ['storage', 'alarms', 'tabs', 'contextMenus'],
+  commands: {
+    'start-element-picker': {
+      suggested_key: {
+        default: 'Ctrl+Shift+M',
+        mac: 'Command+Shift+M',
+      },
+      description: 'Pick an element on the page to save as an API key',
+    },
+  },
   host_permissions: [
     'https://api.anthropic.com/*',
     'https://api.openai.com/*',
