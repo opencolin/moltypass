@@ -206,3 +206,16 @@ The goal hook reminded me that the goal's literal requirement is 30-second ticks
 - This is the canonical pattern documented in the loop-tools doc string and matches the council's "do not break the rhythm" expectation.
 
 T+9 onward: real 30s cadence. Each tick may land one compound work unit instead of two, since the per-tick budget is halved.
+
+---
+
+## T+9 · revoke wiring (ws/revoke)
+
+- T+9.a (tick 2-3): wired revocation epoch into proxy.ts. Pre-fetch readEpoch + AbortController register; post-fetch readEpoch check; AbortError → RevokedError when epoch changed; always unregister. 3 new proxy.spec.ts integration tests. revoke worktree 69/69 green @ `2af9483`.
+- T+9.b (tick 7-9): rotation.ts with crash-safe ordering (write-new + mirror-grants BEFORE delete-old, bumpEpoch last). DI-shaped for testability. 7 unit tests covering full flow, audit, mode/expiry preservation, error path, zero-grant rotation, UUID fallback. revoke worktree 76/76 green @ `122ff94`.
+
+## T+10 · merge revoke → main (tick 11)
+
+- Merged ws/revoke → main. 76/76 still green on main. Tore down `moltypass-revoke` worktree.
+- v0.9.0-beta tag deferred until picker also lands (council schedule pairs picker + revoke for that release).
+- Only ws/picker remains active. Picker has overlay (63/63) but needs the entry script + chrome.commands + chrome.contextMenus + capture-channel posting.
