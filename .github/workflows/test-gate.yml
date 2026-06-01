@@ -23,14 +23,18 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Invoke binaries directly to bypass pnpm 11's verify-deps-before-run
+      # pre-check, which conflicts with our esbuild build-script allow-list.
+      # The pnpm scripts are kept for documentation; CI calls .bin/ directly.
+
       - name: Typecheck
-        run: pnpm typecheck
+        run: ./node_modules/.bin/tsc --noEmit
 
       - name: Unit tests
-        run: pnpm test
+        run: ./node_modules/.bin/vitest run
 
       - name: Key-shape grep guard
-        run: pnpm tsx scripts/grep-no-keys.ts
+        run: ./node_modules/.bin/tsx scripts/grep-no-keys.ts
 
       # Playwright runs only when the extension itself has changed to
       # keep PR feedback fast. Wire on a separate matrix once the
