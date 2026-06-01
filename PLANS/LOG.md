@@ -146,3 +146,25 @@ Wrote `tests/proxy.spec.ts` with 4 integration cases (2xx, 429, fetch reject, no
 - After fix: **32/32 green** in detector worktree.
 
 Scheduling next 60s wake. Next plan: T+6.a write `src/content/detector-banner.ts` (Shadow DOM banner) + `src/background/capture.ts` (background handler); T+6.b add capture.spec.ts + content-script entry wiring.
+
+---
+
+## T+6 · compound tick (a: capture handler; b: Shadow DOM banner)
+
+### T+6.a · src/background/capture.ts + 9 tests
+
+Dependency-injected handler — `CaptureDeps { isVaultUnlocked, askForConfirmation, saveToVault }`. Re-validates against the ANCHORED provider `keyShape` (the scan-time anchor stripping in key-scan.ts is the inbound side; this is the outbound guard before anything touches the vault). Rejects on `unknown_service`, `shape_invalid`, `vault_locked`, `user_denied`, `internal`. Emits `audit.capture` only after the vault save succeeds.
+
+`maskCandidate(s)` shows first 8 + last 4 with `…` separator; fully masks candidates ≤14 chars.
+
+9 unit tests cover every reject path and the happy path (assertion that audit-db has the emitted event).
+
+### T+6.b · src/content/detector-banner.ts + 6 tests + defense-in-depth refactor
+
+`mountSaveBanner` attaches a host element to `document.body` with `z-index: 2147483647` and `all: initial`, then a **closed** Shadow DOM root for the actual UI. Single-instance — replaces any prior banner. Returns a `BannerHandle { destroy() }` that's idempotent.
+
+**Security plugin caught an `innerHTML` use** — even though the template was a static string literal with all user fields set via `textContent` afterward, the guidance said no `innerHTML` in a content script at all. Refactored to pure `createElement` + `append` + `textContent`. Same DOM output, zero HTML-parser surface, no drift risk if a future contributor adds a template variable.
+
+6 tests: host attaches to body, single-instance replacement, idempotent destroy, Save click fires `onSave` + destroys, Dismiss click fires `onDismiss` + destroys, plaintext candidate never appears in `host.outerHTML` (the closed-shadow security property).
+
+**Worktree state:** ws/detector now has key-scan + capture + banner with 47/47 tests green. Next tick: detector content-script entry that wires it together + content-script-injected runtime registration + merge prep.
