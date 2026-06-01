@@ -32,6 +32,20 @@ const manifest = defineManifest({
       all_frames: false,
       world: 'ISOLATED',
     },
+    // Provider key-creation detector — narrower URL match, runs at
+    // document_idle so the modal it's looking for has had a chance to
+    // mount before the initial scan.
+    {
+      matches: [
+        'https://console.anthropic.com/settings/keys*',
+        'https://platform.openai.com/api-keys*',
+        'https://aistudio.google.com/apikey*',
+      ],
+      js: ['src/content/detector.ts'],
+      run_at: 'document_idle',
+      all_frames: false,
+      world: 'ISOLATED',
+    },
   ],
   web_accessible_resources: [
     {
