@@ -9,11 +9,22 @@
 import type { ProviderId } from '../shared/types';
 import { PROVIDERS } from '../shared/providers';
 import { getKeyPlaintext } from './vault';
+import { auditLog } from './audit-log';
 
 export interface ProxyResponse {
   status: number;
   headers: Record<string, string>;
   body: string;
+  latencyMs: number;
+}
+
+/** Context fields the audit log records about a proxy call. Origin
+ *  comes from sender.origin in the message router; never the page. */
+export interface ProxyAuditContext {
+  origin: string;
+  grantId?: string;
+  keyFingerprint?: string;
+  keyLabel?: string;
 }
 
 export async function proxyRequest(
@@ -23,9 +34,15 @@ export async function proxyRequest(
   method: string,
   pageHeaders: Record<string, string> = {},
   body?: unknown,
+  audit?: ProxyAuditContext,
 ): Promise<ProxyResponse> {
   const provider = PROVIDERS[service];
   if (!provider) throw new Error(`Unknown service: ${service}`);
+
+  // Path validation: must start with '/' and not be an absolute URL.
+  if (!path.startsWith('/') || path.startsWith('//')) {
+    throw new Error('path must be a relative path starting with "/"');
+  }
 
   const apiKey = await getKeyPlaintext(keyId);
   const authValue = provider.authPrefix ? `${provider.authPrefix}${apiKey}` : apiKey;
@@ -36,27 +53,70 @@ export async function proxyRequest(
   safeHeaders[provider.authHeader] = authValue;
   if (!('content-type' in safeHeaders)) safeHeaders['content-type'] = 'application/json';
 
-  // Path validation: must start with '/' and not be an absolute URL.
-  if (!path.startsWith('/') || path.startsWith('//')) {
-    throw new Error('path must be a relative path starting with "/"');
-  }
   const url = `${provider.apiBaseUrl}${path}`;
+  const requestBody = body !== undefined ? JSON.stringify(body) : undefined;
+  const bytesUp = requestBody?.length ?? 0;
+  const startedAt = Date.now();
 
-  const res = await fetch(url, {
-    method,
-    headers: safeHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    // Don't leak page cookies upstream — fetch from SW doesn't include
-    // them by default, but be explicit.
-    credentials: 'omit',
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: safeHeaders,
+      body: requestBody,
+      credentials: 'omit',
+    });
+  } catch (err) {
+    const latencyMs = Date.now() - startedAt;
+    if (audit) {
+      void auditLog.proxyError({
+        ...audit,
+        service,
+        keyId,
+        status: 0,
+        pathPreview: path,
+        latencyMs,
+        bytesUp,
+        bytesDown: 0,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+    throw err;
+  }
 
   const headers: Record<string, string> = {};
-  res.headers.forEach((value, key) => {
-    headers[key] = value;
-  });
+  res.headers.forEach((value, key) => { headers[key] = value; });
+  const text = await res.text();
+  const latencyMs = Date.now() - startedAt;
+  const bytesDown = text.length;
 
-  return { status: res.status, headers, body: await res.text() };
+  if (audit) {
+    if (res.status < 400) {
+      void auditLog.proxyOk({
+        ...audit,
+        service,
+        keyId,
+        status: res.status,
+        pathPreview: path,
+        latencyMs,
+        bytesUp,
+        bytesDown,
+      });
+    } else {
+      void auditLog.proxyError({
+        ...audit,
+        service,
+        keyId,
+        status: res.status,
+        pathPreview: path,
+        latencyMs,
+        bytesUp,
+        bytesDown,
+      });
+    }
+  }
+
+  return { status: res.status, headers, body: text, latencyMs };
 }
 
 const HEADER_DENYLIST = new Set([
