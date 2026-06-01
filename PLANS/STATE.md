@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+3 complete (2 work cycles + live install kicked off)
-- Phase: First-wave foundation + retention + Argon2id WASM + tests; verification next
+- Tick: T+3 complete (3 work cycles: a + b + c; verification cycle exposed + fixed pnpm 11 friction)
+- Phase: test-infra gate verified live (4/4 tests + grep PASS); audit/security ready to verify on T+4
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -20,7 +20,7 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 | ws            | scope    | status        | worktree                              | next action |
 |---------------|----------|---------------|---------------------------------------|---|
-| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ `b60ba8e` | Verify `pnpm test` green after install completes (background bash); add Playwright config for content scripts |
+| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ (post-T+3.c, log on next main commit) | Gate verified live 4/4 green + grep PASS. Next: add Playwright config for content scripts (gates detector/picker work) |
 | audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit) @ `924475a` | Wire audit emits into the existing proxy.ts/permissions.ts/consent.ts; add audit-retention.spec.ts; add audit-migrate.spec.ts |
 | security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security) @ `8e326dd` | Wire vault.ts to use new vault-crypto header schema; add Argon2id integration smoke (deferred to e2e); HKDF helper for IDB at-rest encryption |
 | detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |

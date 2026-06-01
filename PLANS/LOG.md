@@ -74,8 +74,19 @@ Scheduling next 60s wake (will contain T+3.a + T+3.b).
 - security (folded into `@8e326dd`): `tests/vault-crypto.spec.ts` — 7 PBKDF2-path cases (round-trip, wrong-password null, encrypt/decrypt, IV randomness, tamper rejection via AES-GCM tag, rewrapVault fresh salt, header carries Argon2id params).
 - test-infra (folded into `@b60ba8e`): `.github/workflows/test-gate.yml` — pnpm install → typecheck → vitest → grep-no-keys. No untrusted-input interpolation. Playwright deferred until detector/picker need it live.
 
-### T+3.c · live verification (in background)
+### T+3.c · live verification (completed this tick)
 
-Launched `pnpm install` in `moltypass-test-infra/` so we can actually run `pnpm test` on the next wake instead of just trusting it compiles. The next tick reads the install result and decides whether to run the tests or fix dep resolution.
+Background `pnpm install` finished mid-turn (exit 0); ran the gate live as a third compound work cycle.
+
+**Verified live:**
+- `./node_modules/.bin/vitest run` → 4/4 tests green (chrome.storage round-trip, alarm fire, IDB round-trip, per-test reset)
+- `./node_modules/.bin/tsx scripts/grep-no-keys.ts` → PASS
+
+**Friction found + fixed:**
+1. pnpm 11 blocks esbuild build scripts by default → added `pnpm.onlyBuiltDependencies: ["esbuild"]` to package.json.
+2. pnpm 11's `verify-deps-before-run` pre-check fires even with `.npmrc verify-deps-before-run=false` — apparently not honored in 11.0.9. Workaround: invoke binaries directly.
+3. test-gate.yml updated to call `./node_modules/.bin/{tsc,vitest,tsx}` directly. pnpm scripts kept for human use.
+
+Commit: test-infra `@?` (logged on next main commit). Audit/security worktrees still need their own installs to run tests; planned for T+4.
 
 Scheduling next 60s wake.
