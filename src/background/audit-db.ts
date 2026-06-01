@@ -21,6 +21,11 @@ const STORE = 'events';
 
 let pendingOpen: Promise<IDBDatabase> | null = null;
 
+/** Test-only: drop the cached connection so a fresh IDB instance is reopened. */
+export function __resetForTesting(): void {
+  pendingOpen = null;
+}
+
 function openDb(): Promise<IDBDatabase> {
   if (pendingOpen) return pendingOpen;
   pendingOpen = new Promise<IDBDatabase>((resolve, reject) => {
@@ -107,17 +112,19 @@ export async function query(filter: AuditQueryFilter, opts: AuditQueryOptions = 
     const direction: IDBCursorDirection = order === 'desc' ? 'prev' : 'next';
     const range = buildKeyRange(filter, indexName);
     const cursorReq = source.openCursor(range, direction);
-    let scanned = 0;
+    // Cursor pagination: skip every primary key <= the opaque cursor
+    // (ascending) or >= it (descending). Records strictly after the
+    // cursor are collected. Simple, correct, no continuePrimaryKey
+    // gymnastics.
+    const skipBoundary = opts.cursor ? Number(opts.cursor) : null;
     cursorReq.onsuccess = () => {
       const cursor = cursorReq.result;
       if (!cursor) { resolve(); return; }
-      // Skip ahead if an opaque cursor was provided
-      if (opts.cursor && scanned === 0 && String(cursor.primaryKey) !== opts.cursor) {
-        cursor.continuePrimaryKey?.(cursor.key, Number(opts.cursor));
-        scanned = 1; // force the next tick to start collecting
-        return;
+      const pk = Number(cursor.primaryKey);
+      if (skipBoundary !== null) {
+        const past = order === 'asc' ? pk > skipBoundary : pk < skipBoundary;
+        if (!past) { cursor.continue(); return; }
       }
-      scanned++;
       const value = cursor.value as AuditEvent;
       if (matchesPostFilter(value, filter)) {
         records.push(value);

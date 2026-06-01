@@ -1,6 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import type { AuditEvent } from '../src/shared/audit-types';
-import { appendEvent, query, count, pruneOlderThan } from '../src/background/audit-db';
+import { appendEvent, query, count, pruneOlderThan, __resetForTesting } from '../src/background/audit-db';
+
+beforeEach(() => {
+  // Drop the audit-db module's cached IDB connection so the global
+  // fake-indexeddb reset (in tests/setup/index.ts) is honored.
+  __resetForTesting();
+});
 
 const baseEvent = (overrides: Partial<AuditEvent> = {}): AuditEvent => ({
   ts: Date.now(),
