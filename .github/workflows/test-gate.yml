@@ -1,0 +1,37 @@
+name: test-gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Key-shape grep guard
+        run: pnpm tsx scripts/grep-no-keys.ts
+
+      # Playwright runs only when the extension itself has changed to
+      # keep PR feedback fast. Wire on a separate matrix once the
+      # detector/picker workstreams need the rig live.
