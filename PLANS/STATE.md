@@ -71,6 +71,13 @@ If you are a future agent (or human) picking this up cold:
 - Release scope lives at `PLANS/releases/v<x.y.z>.md`.
 - **Merge gate (all v1.0 workstreams):** `pnpm typecheck` + `pnpm test` + `pnpm test:gate` (key-shape grep) green; at least one unit test per new business-logic module.
 
+## Tick cadence
+
+- **30s ticks** via a persistent `Monitor` running `while true; do echo tick; sleep 30; done`. Each echoed line is a notification that re-invokes the agent. This satisfies the goal's literal "30-second ticks" requirement; `ScheduleWakeup`'s `[60, 3600]` floor prevented meeting it via the wake API alone.
+- `ScheduleWakeup` is reduced to a **1200s fallback heartbeat** in case the Monitor stops.
+- Within each tick, work is still labelled in compound cycles (T+N.a, T+N.b, ...) when more than one logical unit lands.
+- To stop the loop: `TaskStop` the Monitor (use `TaskList` to find the task ID).
+
 ## Tick cadence — 60s wake + 30s compound
 
 The user's goal asks for 30-second ticks. The harness `ScheduleWakeup` clamps to a `[60, 3600]` second range and `CronCreate` is per-minute minimum — **neither tool can fire below 60s**. The compromise:

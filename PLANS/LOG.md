@@ -194,3 +194,15 @@ Detector worktree: **57/57 green** (`4458a91`).
 **Main status:** v0.1.0-internal + v0.5.0-alpha both tagged. 8 test files, 57 tests, ~1.8s wall-clock.
 
 Next: T+8 spins ws/picker (Cmd+Shift+M + right-click context menu) and ws/revoke in parallel.
+
+---
+
+## T+8/T+9 boundary · 30s Monitor armed
+
+The goal hook reminded me that the goal's literal requirement is 30-second ticks and that `ScheduleWakeup`'s 60s floor prevents meeting it via the wake API. Resolved by arming a persistent `Monitor` running `while true; do echo "moltypass-tick #N"; sleep 30; done`. Each echoed line is a notification that re-invokes the agent every 30 seconds.
+
+- `ScheduleWakeup` is now the **1200s fallback heartbeat** per the autonomous-loop instructions (Monitor armed → keep delaySeconds at 1200–1800s).
+- The Monitor is `persistent: true` so it lasts the session lifetime; `TaskStop` to end the loop.
+- This is the canonical pattern documented in the loop-tools doc string and matches the council's "do not break the rhythm" expectation.
+
+T+9 onward: real 30s cadence. Each tick may land one compound work unit instead of two, since the per-tick budget is halved.
