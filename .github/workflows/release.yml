@@ -1,0 +1,96 @@
+name: release
+
+# Fires on a v-prefixed tag push (produced by scripts/release.ts via
+# 'pnpm release <patch|minor|major>'). The workflow is intentionally
+# simple: build, zip, generate release notes from conventional commits
+# in the tag range, and create a GitHub Release with the .zip attached.
+#
+# Security:
+# - No untrusted input reaches a `run:` block. Tag name is constrained
+#   by the on.push.tags filter to v*.*.* and not interpolated into
+#   shell strings; it lives in env: where shell expansion is safe.
+# - GITHUB_TOKEN is the only secret used; permissions are scoped to
+#   the minimum (contents: write for the release).
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TAG: ${{ github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # full history so release-notes can see prior tags
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Gate the release on the same checks every PR runs.
+      - name: Typecheck
+        run: ./node_modules/.bin/tsc --noEmit
+
+      - name: Unit tests
+        run: ./node_modules/.bin/vitest run
+
+      - name: Key-shape grep guard
+        run: ./node_modules/.bin/tsx scripts/grep-no-keys.ts
+
+      - name: Verify package.json version matches the tag
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "v${PKG_VERSION}" != "${TAG}" ]; then
+            echo "::error::tag (${TAG}) does not match package.json version (v${PKG_VERSION})"
+            exit 1
+          fi
+
+      - name: Build extension
+        run: ./node_modules/.bin/vite build
+
+      - name: Zip extension
+        # ${TAG} comes from the job-level env, so this run block has zero
+        # ${{ }} interpolation surface. The on.push.tags filter constrains
+        # TAG to v*.*.*; combined with no interpolation, command-injection
+        # surface is nil.
+        run: ./node_modules/.bin/tsx scripts/zip-extension.ts dist "dist/moltypass-${TAG}.zip"
+
+      - name: Generate release notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          PREV=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
+          if [ -z "$PREV" ]; then
+            RANGE="${TAG}"
+          else
+            RANGE="${PREV}..${TAG}"
+          fi
+          ./node_modules/.bin/tsx scripts/release-notes.ts "${RANGE}" "${TAG}" > release-notes.md
+          echo "Generated notes for ${RANGE}:"
+          cat release-notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "${TAG}" \
+            --title "${TAG}" \
+            --notes-file release-notes.md \
+            "dist/moltypass-${TAG}.zip"
