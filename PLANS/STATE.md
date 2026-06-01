@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+15 complete (release merged → main; **v1.0.0 tagged**)
-- Phase: v1.0.0 launched. 127/127 tests. Council's v1.0 scope fully reached. Next: v2.0 workstreams (auth + dashboard + enterprise-sw + leak per council T+1) — all currently DEFERRED status, ready to spin.
+- Tick: T+25 complete (leak merged → main; **v2.0.0 tagged**)
+- Phase: **v2.0.0 reached.** 341/341 tests on main. 4 v2.0 workstreams substantively merged (auth lib, dashboard lib, enterprise-sw, leak). Route handlers + RSC pages remain in ws/auth and ws/dashboard for v2.1.
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -20,22 +20,17 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 | ws            | scope    | status        | worktree                              | next action |
 |---------------|----------|---------------|---------------------------------------|---|
-| test-infra    | v1.0     | ✅ MERGED to main | — (torn down) | done; Playwright comes with detector workstream |
-| audit         | v1.0     | ✅ MERGED to main | — (torn down) | wire audit emits into proxy.ts/permissions.ts/consent.ts during integration tick |
-| security      | v1.0     | ✅ MERGED to main | — (torn down) | wire vault.ts to new header; HKDF for IDB at-rest in T+6+ |
-| detector      | v1.0     | ✅ MERGED to main | — (torn down at T+7) | done; runtime registerContentScripts for custom providers can land in v1.1 |
-| picker        | v1.0     | ✅ MERGED to main | — (torn down at T+13) | done — overlay + entry + bridge + manifest commands/contextMenus |
-| revoke        | v1.0     | ✅ MERGED to main | — (torn down at T+10) | done — revocation + rotation + proxy wiring |
-| release       | v1.0     | TODO          | — (spin at T+14) | first file: `scripts/release.ts` (semver bump + manifest/package sync). Also: `web/app/privacy/page.tsx`, `store/listing.md`, `.github/workflows/release.yml`, `scripts/zip-extension.ts`. CI test-gate already in main from test-infra. |
-| release       | v1.0     | TODO          | — (spin in W6) | CI workflow already in main as part of test-infra; release.ts script + CWS assets remain |
-| detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
-| picker        | v1.0     | TODO          | —                                     | spin after detector (shares `src/background/capture.ts`) |
-| revoke        | v1.0     | TODO          | —                                     | spin after audit lands (needs audit events for revoke kind) |
-| release       | v1.0     | TODO          | —                                     | spin in W6 after detector/picker/revoke/security land |
-| auth          | **CUT → v2.0** | DEFERRED |                                       | not in v1.0 — see council decision |
-| dashboard     | **CUT → v2.0** | DEFERRED |                                       | not in v1.0 |
-| enterprise-sw | **CUT → v2.0** | DEFERRED |                                       | not in v1.0 |
-| leak          | **CUT → v2.0** | DEFERRED |                                       | not in v1.0 |
+| test-infra    | v1.0 | ✅ MERGED          | — | done |
+| audit         | v1.0 | ✅ MERGED          | — | done |
+| security      | v1.0 | ✅ MERGED          | — | done |
+| detector      | v1.0 | ✅ MERGED          | — | done |
+| picker        | v1.0 | ✅ MERGED          | — | done |
+| revoke        | v1.0 | ✅ MERGED          | — | done |
+| release       | v1.0 | ✅ MERGED          | — | done — v1.0.0 tagged |
+| auth          | v2.0 | IN_PROGRESS (T+16) | `moltypass-auth/` (ws/auth) | shared schema landing in dashboard worktree; auth picks up `web/lib/auth/session.ts` after |
+| dashboard     | v2.0 | IN_PROGRESS (T+16) | `moltypass-dashboard/` (ws/dashboard) | own `web/lib/db.ts` extensions (users, memberships, magic_link_tokens, admin_actions, ingest_nonces) first; then RSC routes |
+| enterprise-sw | v2.0 | TODO               | — | spin after auth+dashboard schema lands |
+| leak          | v2.0 | TODO               | — | spin after enterprise-sw |
 
 ## Releases
 
