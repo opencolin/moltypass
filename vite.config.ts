@@ -1,16 +1,26 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { crx, defineManifest } from '@crxjs/vite-plugin';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 // The @crxjs/vite-plugin rewrites manifest paths to point at compiled
 // assets and bundles content scripts, the service worker, the inpage
 // script (declared as a web_accessible_resource and built from src/inpage),
 // and the React HTML entry points.
 
+// SINGLE SOURCE OF TRUTH: version lives in package.json.
+// scripts/release.ts is the sole writer; this file is a reader only.
+const __filename = fileURLToPath(import.meta.url);
+const PKG = JSON.parse(
+  readFileSync(join(dirname(__filename), 'package.json'), 'utf8'),
+) as { version: string };
+
 const manifest = defineManifest({
   manifest_version: 3,
   name: 'Moltypass',
-  version: '0.0.1',
+  version: PKG.version,
   description:
     'Encrypted vault for AI service API keys. Per-origin consent. Keys never enter the page.',
   minimum_chrome_version: '120',
