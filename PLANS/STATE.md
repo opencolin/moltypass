@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+1
-- Phase: First-wave worktree spin + start audit
+- Tick: T+2 (heading into)
+- Phase: First-wave worktree initial commits done; advancing per-ws scaffolding
 - Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
 
 ## v1.0 scope (council-decided)
@@ -20,9 +20,9 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 | ws            | scope    | status        | worktree                              | next action |
 |---------------|----------|---------------|---------------------------------------|---|
-| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) | Build vitest config + fake-chrome/fake-idb setup |
-| audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit)         | Write `src/shared/audit-types.ts` |
-| security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security)   | Vault header KDF-version field; Argon2id WASM spike |
+| test-infra    | v1.0     | IN_PROGRESS   | `moltypass-test-infra/` (ws/test-infra) @ `5d6df40` | Add package.json devDeps + scripts; write grep-no-keys.ts; write example.spec.ts smoke test |
+| audit         | v1.0     | IN_PROGRESS   | `moltypass-audit/` (ws/audit) @ `bd89c5c` | Write `audit-log.ts` facade + integrate audit emits in proxy.ts/permissions.ts/consent.ts |
+| security      | v1.0     | IN_PROGRESS   | `moltypass-security/` (ws/security) @ `7fd6f97` | Write `src/crypto/vault-crypto.ts` with KDF abstraction + `src/crypto/argon2.ts` WASM wrapper |
 | detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
 | picker        | v1.0     | TODO          | —                                     | spin after detector (shares `src/background/capture.ts`) |
 | revoke        | v1.0     | TODO          | —                                     | spin after audit lands (needs audit events for revoke kind) |
