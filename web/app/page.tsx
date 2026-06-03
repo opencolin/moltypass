@@ -44,12 +44,13 @@ function Hero() {
     <section className="hero">
       <div className="container">
         <span className="eyebrow">Open source · Chrome extension · Free for personal use</span>
-        <h1>Your AI API keys belong in a vault — not pasted into every site you visit.</h1>
+        <h1>Your API keys are credentials. Stop treating them like environment variables.</h1>
         <p className="lede">
-          Moltypass holds your Anthropic, OpenAI, and Gemini keys in an encrypted
-          local vault, then proxies AI requests on your behalf. The key never
-          enters the page. You can see every site that has used it, and revoke
-          access in one click.
+          Moltypass is the password manager AI keys never had. Save them straight
+          from the provider&apos;s console without ever copying. Use them in any app
+          without pasting. Rotate or revoke in one click. See every call that
+          ever used one. <code>.env</code> is not a secrets manager — and neither is
+          your clipboard, your chat transcript, or your dotfiles.
         </p>
         <div className="actions">
           <a className="btn btn-primary btn-lg" href="#install" id="install">
