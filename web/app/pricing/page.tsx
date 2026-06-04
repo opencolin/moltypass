@@ -16,7 +16,7 @@ export default function PricingPage() {
             <a href="https://github.com/moltypass/moltypass">GitHub</a>
           </nav>
           <div className="right">
-            <a className="btn btn-primary" href="mailto:sales@moltypass.dev">Book a demo</a>
+            <a className="btn btn-primary" href="mailto:sales@moltypass.app">Book a demo</a>
           </div>
         </div>
       </header>
@@ -61,7 +61,7 @@ export default function PricingPage() {
                   <li>Anomaly &amp; leak alerts to Slack / email</li>
                   <li>Up to 50 users</li>
                 </ul>
-                <a className="btn btn-primary cta" href="mailto:sales@moltypass.dev?subject=Team%20trial">Start 14-day trial</a>
+                <a className="btn btn-primary cta" href="mailto:sales@moltypass.app?subject=Team%20trial">Start 14-day trial</a>
               </div>
               <div className="plan">
                 <span className="name">Enterprise</span>
@@ -75,7 +75,7 @@ export default function PricingPage() {
                   <li>Dedicated Slack channel</li>
                   <li>99.9% SLA</li>
                 </ul>
-                <a className="btn btn-secondary cta" href="mailto:sales@moltypass.dev">Talk to sales</a>
+                <a className="btn btn-secondary cta" href="mailto:sales@moltypass.app">Talk to sales</a>
               </div>
             </div>
           </div>

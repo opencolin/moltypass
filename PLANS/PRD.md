@@ -105,7 +105,7 @@ The product has nine flows that matter. Each has a target completion time and a 
 **Target:** install → vault unlocked → first key saved in **< 3 minutes**.
 
 ```
-1. User clicks "Add to Chrome" on chrome.google.com listing or moltypass.dev.
+1. User clicks "Add to Chrome" on chrome.google.com listing or moltypass.app.
 2. Chrome installs; Moltypass icon appears in toolbar.
 3. Auto-opens onboarding tab (chrome-extension://.../welcome.html):
 
@@ -393,7 +393,7 @@ In each row, "v1.0" = the council-decided launch scope; everything else is later
 
 - **NFR-S1** Vault encrypted at rest with a key derived from the user's master password — never stored.
 - **NFR-S2** The CI test-gate's grep guard refuses any commit containing a key-shaped string outside `tests/fixtures/synthetic-keys.ts`.
-- **NFR-S3** SECURITY.md is current at launch with disclosure contact (security@moltypass.dev) and STRIDE annotations per surface.
+- **NFR-S3** SECURITY.md is current at launch with disclosure contact (security@moltypass.app) and STRIDE annotations per surface.
 - **NFR-S4** No key bytes appear in any log, console output, error report, or crash dump in any code path. Audited via grep + manual review pre-launch.
 - **NFR-S5** Revocation epoch enforced before AND after every upstream fetch. Unit test demonstrating mid-fetch revoke rejection is a launch gate.
 - **NFR-S6** TOCTOU residual on streaming responses is documented in SECURITY.md (accepted residual per council).

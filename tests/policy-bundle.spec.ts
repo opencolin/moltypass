@@ -11,7 +11,7 @@ function baseInput(overrides: Partial<BundleInput> = {}): BundleInput {
   return {
     orgId: 'org-1',
     ingestApiToken: 'tok-' + 'x'.repeat(20),
-    baseUrl: 'https://app.moltypass.dev',
+    baseUrl: 'https://app.moltypass.app',
     ...overrides,
   };
 }
@@ -23,8 +23,8 @@ describe('buildManagedConfig', () => {
       schemaVersion: 1,
       orgId: 'org-1',
       apiToken: baseInput().ingestApiToken,
-      ingestUrl: 'https://app.moltypass.dev/api/ingest',
-      policyUrl: 'https://app.moltypass.dev/api/policy',
+      ingestUrl: 'https://app.moltypass.app/api/ingest',
+      policyUrl: 'https://app.moltypass.app/api/policy',
     });
   });
 
@@ -63,7 +63,7 @@ describe('buildManagedConfig', () => {
   });
 
   it('rejects non-http baseUrl', () => {
-    expect(() => buildManagedConfig({ ...baseInput(), baseUrl: 'app.moltypass.dev' })).toThrow('http');
+    expect(() => buildManagedConfig({ ...baseInput(), baseUrl: 'app.moltypass.app' })).toThrow('http');
   });
 
   it('rejects unknown forbiddenProviders entries', () => {

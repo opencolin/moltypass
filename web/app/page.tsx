@@ -526,7 +526,7 @@ function Enterprise() {
               <li>Per-org rotation policy enforced across browser + CLI surfaces</li>
             </ul>
             <div className="actions">
-              <a className="btn btn-primary" href="mailto:sales@moltypass.dev">Book a demo</a>
+              <a className="btn btn-primary" href="mailto:sales@moltypass.app">Book a demo</a>
               <Link href="/pricing" className="btn btn-secondary">See pricing</Link>
             </div>
           </div>
@@ -576,7 +576,7 @@ function Security() {
           </div>
         </div>
         <p className="security-disclose">
-          Vulnerability disclosure: <a href="mailto:security@moltypass.dev"><code>security@moltypass.dev</code></a>.
+          Vulnerability disclosure: <a href="mailto:security@moltypass.app"><code>security@moltypass.app</code></a>.
           PGP key on the <a href="/security">security page</a>.
         </p>
       </div>
@@ -628,7 +628,7 @@ function Pricing() {
               <li>Unlimited audit retention</li>
               <li>Dedicated support</li>
             </ul>
-            <a className="btn btn-secondary cta" href="mailto:sales@moltypass.dev">Talk to us</a>
+            <a className="btn btn-secondary cta" href="mailto:sales@moltypass.app">Talk to us</a>
           </div>
         </div>
       </div>
@@ -646,7 +646,7 @@ function Footer() {
           <a href="/security">Security</a>
           <a href="/privacy">Privacy</a>
           <a href="https://github.com/moltypass/moltypass">GitHub</a>
-          <a href="mailto:hello@moltypass.dev">Contact</a>
+          <a href="mailto:hello@moltypass.app">Contact</a>
         </nav>
       </div>
     </footer>

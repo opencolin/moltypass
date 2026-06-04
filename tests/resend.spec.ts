@@ -5,7 +5,7 @@ function makeDeps(overrides: Partial<ResendDeps> = {}): ResendDeps {
   return {
     fetch: vi.fn(async () => new Response(JSON.stringify({ id: 'resend-id-1' }), { status: 200 })) as unknown as typeof fetch,
     apiKey: 'rs_TEST_KEY',
-    from: 'Moltypass <no-reply@moltypass.dev>',
+    from: 'Moltypass <no-reply@moltypass.app>',
     log: vi.fn(),
     ...overrides,
   };
@@ -29,7 +29,7 @@ describe('send', () => {
     expect(headers['content-type']).toBe('application/json');
     const body = JSON.parse((init as RequestInit).body as string);
     expect(body).toEqual({
-      from: 'Moltypass <no-reply@moltypass.dev>',
+      from: 'Moltypass <no-reply@moltypass.app>',
       to: ['alice@b.test'],
       subject: 'hi',
       text: 'hello',
@@ -90,12 +90,12 @@ describe('buildMagicLinkEmail', () => {
   it('composes a clean plain-text body with the link + TTL', () => {
     const msg = buildMagicLinkEmail({
       email: 'alice@b.test',
-      link: 'https://moltypass.dev/auth/callback?token=ABC',
+      link: 'https://moltypass.app/auth/callback?token=ABC',
       ttlMinutes: 15,
     });
     expect(msg.to).toBe('alice@b.test');
     expect(msg.subject).toContain('Moltypass sign-in');
-    expect(msg.text).toContain('https://moltypass.dev/auth/callback?token=ABC');
+    expect(msg.text).toContain('https://moltypass.app/auth/callback?token=ABC');
     expect(msg.text).toContain('15 minutes');
     expect(msg.text).toContain('only once');
     expect(msg.html).toBeUndefined(); // no HTML; reviewers can audit text only

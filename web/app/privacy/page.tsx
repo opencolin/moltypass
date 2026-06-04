@@ -74,7 +74,7 @@ export default function PrivacyPage() {
 
       <h2>Contact</h2>
       <p>
-        Security disclosures: <code>security@moltypass.dev</code>. Privacy questions: <code>privacy@moltypass.dev</code>.
+        Security disclosures: <code>security@moltypass.app</code>. Privacy questions: <code>privacy@moltypass.app</code>.
       </p>
     </main>
   );
