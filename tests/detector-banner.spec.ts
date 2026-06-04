@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mountSaveBanner } from '../src/content/detector-banner';
+import { SYNTHETIC } from './fixtures/synthetic-keys';
 
 beforeEach(() => {
   document.body.replaceChildren();
@@ -93,8 +94,10 @@ describe('mountSaveBanner', () => {
   });
 
   it('does not include the plaintext candidate anywhere in the host element', () => {
-    const candidate = 'sk-ant-FULL_SECRET_HERE_NOT_MASKED';
-    const masked = 'sk-ant-F…SKED';
+    // Synthetic candidate sourced from the allow-listed fixtures file —
+    // never an inline key-shaped string per the CI grep guard.
+    const candidate = SYNTHETIC.anthropic;
+    const masked = 'sk-ant-A…AAAA';
     mountSaveBanner({ masked, providerName: 'A', onSave: () => {}, onDismiss: () => {} });
     const host = document.getElementById('moltypass-detector-banner');
     // outerHTML includes the shadow content via slot serialization in

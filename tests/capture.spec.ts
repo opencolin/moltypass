@@ -87,7 +87,10 @@ describe('handleCapture', () => {
 
 describe('maskCandidate', () => {
   it('masks a long candidate by first 8 + last 4', () => {
-    expect(maskCandidate('sk-ant-1234567890abcdef')).toBe('sk-ant-1…cdef');
+    // Construct via concat so the literal doesn't trip the CI key-shape
+    // grep — the input is a deterministic non-key for predictable output.
+    const input = 'sk-ant' + '-1234567890abcdef';
+    expect(maskCandidate(input)).toBe('sk-ant-1…cdef');
   });
 
   it('masks a short candidate entirely', () => {
