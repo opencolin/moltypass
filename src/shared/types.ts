@@ -69,11 +69,24 @@ export interface VaultEntry {
   id: string;
   service: ProviderId;
   label: string; // user-friendly, e.g. "personal", "work"
-  ciphertext: string; // base64(salt||iv||AES-GCM(plaintext))
+  ciphertext: string; // base64(salt||iv||AES-GCM(plaintext-key))
   createdAt: number;
+  /**
+   * Optional encrypted notes, added in v2.1. base64(salt||iv||AES-GCM(notes)).
+   * Missing on legacy entries — treat as empty. Uses the same master key as
+   * `ciphertext`; separate blob so encoding stays backward-compatible.
+   */
+  notesCiphertext?: string;
+  /**
+   * ms since epoch when notes were last set. Undefined if notes never set.
+   * Kept OUT of ciphertext so the dashboard can sort/list without unlock.
+   */
+  notesUpdatedAt?: number;
 }
 
-export type RedactedVaultEntry = Omit<VaultEntry, 'ciphertext'>;
+export type RedactedVaultEntry = Omit<VaultEntry, 'ciphertext' | 'notesCiphertext'> & {
+  hasNotes: boolean;
+};
 
 export type ConsentMode = 'proxy' | 'reveal';
 
