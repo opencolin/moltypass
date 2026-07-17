@@ -233,3 +233,45 @@ Three tags now: v0.1.0-internal, v0.5.0-alpha, v0.9.0-beta.
 Only the release workstream remains to reach v1.0.0:
 - CI test-gate already in main from test-infra workstream.
 - Need: `scripts/release.ts` (semver bump + manifest/package sync), `scripts/zip-extension.ts`, `scripts/release-notes.ts`, `web/app/privacy/page.tsx`, `store/listing.md` (Chrome Web Store copy + permission justifications), `.github/workflows/release.yml` (on-tag).
+
+---
+
+## T+0 (v2.1) · New goal set: Beat 1Password
+
+- Date: 2026-07-17
+- Directive: "Build a better and easier-to-use AI API key management app and extension than 1Password. Fan out workflows and use worktrees. Use a mode council of project managers to decide and spin the workflows using worktrees for all releases up to v2. Use timers for yourself and use 30-second ticks, document all of the plans so other agents can pick up right where you left off."
+- Prior state: v2.0.0 tagged (341/341 tests) with 4 v2.0 workstreams merged. Route handlers + RSC pages remain in ws/auth and ws/dashboard as v2.1 punch list.
+- Interpretation: v2.1 → v3.0 iteration focused on 1Password parity + surpassing on AI-key specifics. Convening PM council to lock scope.
+- Baseline analysis: PLANS/competitors/1password.md (pending — will be written by the council or its output).
+- Tick cadence: 30s ticks via Monitor + main-loop compound work per tick as in v1.0.
+- Workstream setup: worktrees will be spun once council picks scope.
+
+---
+
+## T+1 (v2.1) · Council + first two workstreams landed
+
+- **T+1.a — ws/uri** `@dc4866b` — `moltypass://` URI parser + 23 tests. Foundation for MCP `uri_lint` and CLI URI resolution.
+- **T+1.b — ws/notes** `@6a8a40d` — Item notes on VaultEntry + 13 tests. Also aligned vault.ts to current vault-crypto API (latent import break — proxy tests were mocking vault, so no one caught it).
+- Council v2.1 binding decision written: PLANS/council/v21-beat-1password.md
+- MCP spec written: PLANS/mcp-spec.md (12 tools, zero-knowledge, stdio)
+- 1Password competitive doc: PLANS/competitors/1password.md
+- User signal mid-turn: 1Password shipped an MCP server → v2.1 pivots to MCP as centerpiece
+- New worktrees spun: ws/mcp, ws/uri, ws/notes, ws/history (all off main @38a1250)
+- Next: ws/history (item mutation log) → ws/mcp implementation → merge order uri → notes → history → dashboard → auth → mcp
+
+## T+1.c — ws/history `@6bccea8`
+Per-item mutation log via 6 new AuditEventKind values + `itemHistory()` query facade. Zero new storage. 12 tests. Long labels clipped in meta. Emit-site wiring is a small follow-up (vault.addKey → itemCreated; setNotes → itemNotesUpdated).
+
+## T+1.d — ws/mcp `@bdc6df6`
+The launch centerpiece. `src/mcp/{types,redact,tools,uri-parser,fixtures/fake-daemon}.ts` + 49 tests. All 12 MCP tools implemented at the dispatcher layer with the fake DaemonClient. Zero-knowledge invariant enforced at three layers: metadata-only reads, exec output redaction (9 provider regexes with strict prefix ordering), uri_lint returns existence not value. Zero-knowledge sweep test asserts no key-shape reaches any tool response.
+
+Pending on ws/mcp: T+1.e (stdio JSON-RPC transport + Native Messaging daemon-client + bin entry + npm publish config).
+
+Test counts on each worktree at T+1.d:
+- main:            341 / 341
+- ws/uri:          341 + 23 = 364
+- ws/notes:        341 + 13 = 354
+- ws/history:      341 + 12 = 353
+- ws/mcp:          341 + 49 = 390
+- ws/cli:          341 + 15 = 356
+- Combined new tests (deduped, no overlap): **112 net new**
