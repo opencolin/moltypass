@@ -52,7 +52,7 @@ function Hero() {
     <section className="hero">
       <div className="container">
         <span className="eyebrow">Open source · Browser + Terminal · Free forever for personal use</span>
-        <h1>Your API keys are credentials. Stop treating them like environment variables.</h1>
+        <h1>Your API keys are credentials. Stop treating them like <span className="strike">environment variables</span>.</h1>
         <p className="lede">
           Moltypass is the password manager AI keys never had. One vault for the
           browser, the terminal, and every tool in between. Capture keys straight
@@ -100,8 +100,8 @@ function AgentExhibit() {
   return (
     <section className="tight" id="why">
       <div className="container">
-        <span className="eyebrow">Why this exists</span>
-        <h2>Even your AI agent&apos;s best advice is <code>.env</code>.</h2>
+        <span className="eyebrow" data-section="§I">Why this exists</span>
+        <h2>Even your AI agent&apos;s best advice is <span className="env-mark">.env</span>.</h2>
         <p className="lede">
           A real transcript from a real coding agent catching a real pasted credential.
           The agent does its job perfectly — and then recommends the status quo.
@@ -139,7 +139,7 @@ function Surfaces() {
   return (
     <section id="surfaces">
       <div className="container">
-        <span className="eyebrow">Two surfaces, one vault</span>
+        <span className="eyebrow" data-section="§II">Two surfaces, one vault</span>
         <h2>The browser. The terminal. Everywhere you use AI.</h2>
         <p className="lede">
           One encrypted vault on your machine. The Chrome extension handles every
@@ -187,7 +187,7 @@ function TouchId() {
       <div className="container">
         <div className="touchid-grid">
           <div>
-            <span className="eyebrow">macOS</span>
+            <span className="eyebrow" data-section="§III">macOS</span>
             <h2>Unlock with Touch ID. Once.</h2>
             <p className="lede">
               Type your master password the day you install Moltypass. After that,
@@ -249,7 +249,7 @@ function HowItWorks() {
   return (
     <section id="how">
       <div className="container">
-        <span className="eyebrow">How it works</span>
+        <span className="eyebrow" data-section="§IV">How it works</span>
         <h2>Four steps. The key stays put.</h2>
         <div className="four-card">
           <div className="card">
@@ -298,7 +298,7 @@ function Comparison() {
   return (
     <section className="tight">
       <div className="container">
-        <span className="eyebrow">The status quo, line by line</span>
+        <span className="eyebrow" data-section="§V">The status quo, line by line</span>
         <h2>API keys are credentials. They&apos;ve been treated like passwords from 2003.</h2>
         <div className="compare">
           <div className="col">
@@ -333,7 +333,7 @@ function Providers() {
   return (
     <section className="tight">
       <div className="container">
-        <span className="eyebrow">Providers</span>
+        <span className="eyebrow" data-section="§VI">Providers</span>
         <h2>Anthropic, OpenAI, Gemini out of the box.</h2>
         <p className="lede">
           Built-in support for each provider&apos;s key shapes, auth header, and key-creation
@@ -369,7 +369,7 @@ function ToolAware() {
   return (
     <section className="tight">
       <div className="container">
-        <span className="eyebrow">Tool-aware CLI</span>
+        <span className="eyebrow" data-section="§VII">Tool-aware CLI</span>
         <h2>Knows which env var your AI CLI wants. So you don&apos;t.</h2>
         <p className="lede">
           <code>moltypass exec &lt;command&gt;</code> looks at the command, picks the right
@@ -395,7 +395,7 @@ function DashboardPreview() {
   return (
     <section className="tight" id="dashboard">
       <div className="container">
-        <span className="eyebrow">The dashboard</span>
+        <span className="eyebrow" data-section="§VIII">The dashboard</span>
         <h2>Every call. Every site. Every tool. Searchable.</h2>
         <p className="lede">
           The single place to answer &quot;where is my key being used right now?&quot; — across
@@ -510,7 +510,7 @@ function Enterprise() {
       <div className="container">
         <div className="ent">
           <div>
-            <span className="eyebrow">For IT &amp; security teams</span>
+            <span className="eyebrow" data-section="§IX">For IT &amp; security teams</span>
             <h2>Centralized audit. Zero exposure.</h2>
             <p className="lede">
               Deploy Moltypass to your org via Chrome MDM and Homebrew. Devices
@@ -549,7 +549,7 @@ function Security() {
   return (
     <section className="tight security-strip">
       <div className="container">
-        <span className="eyebrow">Open source · STRIDE-reviewed · No telemetry</span>
+        <span className="eyebrow" data-section="§X">Open source · STRIDE-reviewed · No telemetry</span>
         <h2>Read the crypto. Read the audit. Read the receipts.</h2>
         <p className="lede">
           Moltypass is MIT-licensed end-to-end — extension, CLI, native helper,
@@ -588,7 +588,7 @@ function Pricing() {
   return (
     <section className="tight" id="pricing-preview">
       <div className="container">
-        <span className="eyebrow">Pricing</span>
+        <span className="eyebrow" data-section="§XI">Pricing</span>
         <h2>Free for individuals. Real value for teams.</h2>
         <div className="pricing">
           <div className="plan">

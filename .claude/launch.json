@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "moltypass-web",
+      "cwd": "web",
+      "runtimeExecutable": "./node_modules/.bin/next",
+      "runtimeArgs": ["dev", "--port", "3210"],
+      "port": 3210
+    }
+  ]
+}
