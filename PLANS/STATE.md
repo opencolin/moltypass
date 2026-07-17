@@ -8,8 +8,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: **T+1 (v2.1 iteration)**
-- Phase: **v2.1 planning done. MCP centerpiece. Spinning worktrees.**
+- Tick: **T+1.f complete. v2.1.0-alpha tagged.**
+- Phase: **v2.1.0-alpha shipped.** 455/455 tests on main. MCP + moltypass:// + item notes + item history merged. Landing page redesigned.
 - New goal (set 2026-07-17): Beat 1Password on AI-key management. **1Password shipped MCP server mid-turn** → v2.1 pivot to MCP as centerpiece.
 - Council decisions:
   - v1.0: [council/v1-scope-decision.md](council/v1-scope-decision.md)
@@ -30,9 +30,8 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 | 7 | cli-native-protocol | `moltypass-cli/` | `ws/cli` | **READY TO MERGE** | 15 | `@08b13f2` |
 
 Landing status:
-- **97 new tests** across ws/uri + ws/notes + ws/history + ws/mcp
-- 4 clean workstreams ready to merge into main (uri → notes → history → mcp)
-- Punch list (auth + dashboard) is inheritance from v2.0; separate concern
+- **All 4 v2.1 workstreams merged.** +114 net new tests. Tagged v2.1.0-alpha.
+- Punch list before non-alpha: Native Messaging in bin/moltypass-mcp; emit-site wiring; ws/auth + ws/dashboard v2.0 carryover.
 
 ## v1.0 scope (council-decided)
 

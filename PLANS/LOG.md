@@ -275,3 +275,32 @@ Test counts on each worktree at T+1.d:
 - ws/mcp:          341 + 49 = 390
 - ws/cli:          341 + 15 = 356
 - Combined new tests (deduped, no overlap): **112 net new**
+
+## T+1.f — All 4 v2.1 workstreams merged → main. Tagged **v2.1.0-alpha**.
+
+Merge order per council decision: uri → notes → history → mcp.
+
+- `2dc0a5a` merge: ws/uri → main (23 tests)
+- `a79ab4e` merge: ws/notes → main (13 tests + vault-crypto alignment)
+- `f9c184a` merge: ws/history → main (12 tests)
+- `1a974b8` merge: ws/mcp → main (66 tests, tool surface + JSON-RPC stdio)
+
+**Final test count on main: 455/455.** Was 341/341. +114 net new tests.
+
+Pending v2.1 punch-list before v2.1.0 (non-alpha):
+- Native Messaging daemon-client wire-up in bin/moltypass-mcp (currently returns daemon_not_running stub)
+- Emit-site wiring: vault.addKey → itemCreated, setNotes → itemNotesUpdated
+- Auth + Dashboard route handlers (ws/auth, ws/dashboard — v2.0 punch-list carryover)
+- @modelcontextprotocol/sdk swap-in (mechanical replacement of hand-rolled JSON-RPC)
+- Marketplace listings for Claude Desktop / Cursor / Kiro / Continue
+- npm publish config for @moltypass/mcp
+- Homebrew formula moltypass/tap/moltypass-mcp
+
+Worktrees retained for follow-up (ws/mcp for T+1.g Native Messaging, ws/dashboard + ws/auth for v2.0 punch-list). Clean workstreams (uri, notes, history) can be pruned but retained for now.
+
+## STATE snapshot at v2.1.0-alpha
+
+- main @ `1a974b8` — MCP tool surface + JSON-RPC stdio + moltypass:// + item notes + item history + Vault Ledger landing
+- 455/455 tests
+- 12 MCP tools shipped, zero-knowledge invariant tested at three layers
+- 1P competitive gap closed: `op://` parity (moltypass://), notes, history, MCP with SUPERSET of 1P's 7 tools
