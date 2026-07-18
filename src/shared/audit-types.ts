@@ -24,7 +24,32 @@ export type AuditEventKind =
   | 'capture'
   | 'rotate.complete'
   | 'leak.suspected'
-  | 'leak.dismissed';
+  | 'leak.dismissed'
+  // Item-mutation kinds — added v2.1 for per-item history (MCP item_history tool).
+  // These describe changes to a vault item itself, distinct from proxy/consent
+  // events which describe how a key was used.
+  | 'item.created'
+  | 'item.renamed'
+  | 'item.notes_updated'
+  | 'item.file_attached'
+  | 'item.file_removed'
+  | 'item.deleted';
+
+/**
+ * The event kinds that describe a mutation on a vault item (as opposed to a
+ * call using that item, or a consent decision). item_history() filters to
+ * this subset.
+ */
+export const ITEM_MUTATION_KINDS: readonly AuditEventKind[] = [
+  'item.created',
+  'item.renamed',
+  'item.notes_updated',
+  'item.file_attached',
+  'item.file_removed',
+  'item.deleted',
+  'rotate.complete',
+  'revoke',
+] as const;
 
 export interface AuditEvent {
   /** Auto-increment primary key set by audit-db on append. Never set by callers. */

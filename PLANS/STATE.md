@@ -8,9 +8,30 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+25 complete (leak merged → main; **v2.0.0 tagged**)
-- Phase: **v2.0.0 reached.** 341/341 tests on main. 4 v2.0 workstreams substantively merged (auth lib, dashboard lib, enterprise-sw, leak). Route handlers + RSC pages remain in ws/auth and ws/dashboard for v2.1.
-- Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
+- Tick: **T+1.f complete. v2.1.0-alpha tagged.**
+- Phase: **v2.1.0-alpha shipped.** 455/455 tests on main. MCP + moltypass:// + item notes + item history merged. Landing page redesigned.
+- New goal (set 2026-07-17): Beat 1Password on AI-key management. **1Password shipped MCP server mid-turn** → v2.1 pivot to MCP as centerpiece.
+- Council decisions:
+  - v1.0: [council/v1-scope-decision.md](council/v1-scope-decision.md)
+  - v2.1 "Beat 1Password": **[council/v21-beat-1password.md](council/v21-beat-1password.md)** (BINDING — 2026-07-17)
+- MCP spec: **[mcp-spec.md](mcp-spec.md)** (12 tools, zero-knowledge, stdio, `moltypass-mcp` binary)
+- 1Password reference: [competitors/1password.md](competitors/1password.md)
+
+## v2.1 workstreams
+
+| # | Name | Worktree | Branch | Status | Tests | Commit |
+|---|---|---|---|---|---|---|
+| 1 | mcp-server | `moltypass-mcp/` | `ws/mcp` | **TOOL SURFACE LANDED** (transport pending) | 49 (of 30+ target) | `@bdc6df6` |
+| 2 | uri-scheme | `moltypass-uri/` | `ws/uri` | **LANDED** | 23 (of 15+ target) | `@dc4866b` |
+| 3 | item-notes | `moltypass-notes/` | `ws/notes` | **LANDED** | 13 (of 10+ target) | `@6a8a40d` |
+| 4 | item-history | `moltypass-history/` | `ws/history` | **LANDED** | 12 (of 12+ target) | `@6bccea8` |
+| 5 | dashboard-rsc | `moltypass-dashboard/` | `ws/dashboard` | IN_PROGRESS (v2.0 carryover) | 269 vs main's 341 | — |
+| 6 | auth-rsc | `moltypass-auth/` | `ws/auth` | IN_PROGRESS (v2.0 carryover) | ? | — |
+| 7 | cli-native-protocol | `moltypass-cli/` | `ws/cli` | **READY TO MERGE** | 15 | `@08b13f2` |
+
+Landing status:
+- **All 4 v2.1 workstreams merged.** +114 net new tests. Tagged v2.1.0-alpha.
+- Punch list before non-alpha: Native Messaging in bin/moltypass-mcp; emit-site wiring; ws/auth + ws/dashboard v2.0 carryover.
 
 ## v1.0 scope (council-decided)
 
@@ -45,6 +66,21 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 ## Background tasks in flight
 
 (none currently — PM council completed)
+
+## Post-v2 todos (small, cross-cutting)
+
+Not part of a workstream; do opportunistically.
+
+### Branding aliases (see [branding-aliases.md](branding-aliases.md))
+
+- [ ] Add `multipass.chat` as a domain in the Vercel `web` project.
+- [ ] Update DNS on `multipass.chat` → Vercel.
+- [ ] Verify TLS cert provisions for both hosts.
+- [ ] Register `multipass://` URL scheme in `manifest.json` alongside `moltypass://`.
+- [ ] Register `multipass://` in the native-helper URL-handler entries when the CLI daemon lands (v1.1).
+- [ ] Add `multipass` re-export to `@moltypass/sdk` when it lands (v1.1).
+- [ ] Add one-line pointer to branding-aliases.md in `PRD.md` §2.
+- [ ] Add alias footnote to top-level `README.md`.
 
 ## How to resume
 

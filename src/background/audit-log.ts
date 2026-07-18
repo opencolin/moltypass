@@ -69,6 +69,46 @@ interface RotateFields extends BaseFields {
   affectedGrants: number;
 }
 
+// ------- Item-mutation fields (v2.1 item-history) -------
+
+interface ItemCreatedFields extends BaseFields {
+  service: ProviderId;
+  keyId: string;
+  keyLabel: string;
+  captureMethod: 'create-detector' | 'picker' | 'right-click' | 'paste' | 'mcp';
+}
+
+interface ItemRenamedFields extends BaseFields {
+  keyId: string;
+  oldLabel: string;
+  newLabel: string;
+}
+
+interface ItemNotesUpdatedFields extends BaseFields {
+  keyId: string;
+  /** Length of the new notes value (0 = cleared). Content is never in audit. */
+  notesLength: number;
+  hadNotesBefore: boolean;
+}
+
+interface ItemFileAttachedFields extends BaseFields {
+  keyId: string;
+  /** Attached-file name, not path — e.g. "service-account.json". */
+  fileName: string;
+  fileSize: number;
+}
+
+interface ItemFileRemovedFields extends BaseFields {
+  keyId: string;
+  fileName: string;
+}
+
+interface ItemDeletedFields extends BaseFields {
+  keyId: string;
+  keyLabel: string;
+  service: ProviderId;
+}
+
 async function emit(kind: AuditEventKind, source: AuditEvent['source'], fields: BaseFields, extras: Partial<AuditEvent> = {}): Promise<void> {
   const event: AuditEvent = {
     ts: Date.now(),
@@ -143,6 +183,59 @@ export const auditLog = {
         oldKeyId: f.oldKeyId,
         newKeyId: f.newKeyId,
         affectedGrants: f.affectedGrants,
+      },
+    });
+  },
+
+  // ------- Item-mutation events (v2.1 item-history) -------
+
+  async itemCreated(f: ItemCreatedFields): Promise<void> {
+    await emit('item.created', 'user', f, {
+      meta: { ...(f.meta ?? {}), captureMethod: f.captureMethod },
+    });
+  },
+
+  async itemRenamed(f: ItemRenamedFields): Promise<void> {
+    await emit('item.renamed', 'user', f, {
+      meta: {
+        ...(f.meta ?? {}),
+        oldLabel: f.oldLabel.slice(0, 64),
+        newLabel: f.newLabel.slice(0, 64),
+      },
+    });
+  },
+
+  async itemNotesUpdated(f: ItemNotesUpdatedFields): Promise<void> {
+    await emit('item.notes_updated', 'user', f, {
+      meta: {
+        ...(f.meta ?? {}),
+        notesLength: f.notesLength,
+        hadNotesBefore: f.hadNotesBefore ? 1 : 0,
+      },
+    });
+  },
+
+  async itemFileAttached(f: ItemFileAttachedFields): Promise<void> {
+    await emit('item.file_attached', 'user', f, {
+      meta: {
+        ...(f.meta ?? {}),
+        fileName: f.fileName.slice(0, 128),
+        fileSize: f.fileSize,
+      },
+    });
+  },
+
+  async itemFileRemoved(f: ItemFileRemovedFields): Promise<void> {
+    await emit('item.file_removed', 'user', f, {
+      meta: { ...(f.meta ?? {}), fileName: f.fileName.slice(0, 128) },
+    });
+  },
+
+  async itemDeleted(f: ItemDeletedFields): Promise<void> {
+    await emit('item.deleted', 'user', f, {
+      meta: {
+        ...(f.meta ?? {}),
+        keyLabel: f.keyLabel.slice(0, 64),
       },
     });
   },

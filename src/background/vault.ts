@@ -4,67 +4,72 @@
 // every unlock and idle-lock with chrome.alarms (survives SW restart).
 
 import type { ProviderId, RedactedVaultEntry, VaultEntry } from '../shared/types';
-import { decrypt, encrypt } from '../crypto/vault-crypto';
+import {
+  createHeader,
+  unlockWithHeader,
+  encryptWith,
+  decryptWith,
+  type VaultHeader,
+} from '../crypto/vault-crypto';
 
 const STORAGE_KEY = 'moltypass.vault';
 const LOCK_ALARM = 'moltypass.autolock';
 const LOCK_TIMEOUT_MIN = 5;
 
 interface VaultState {
-  // A canary blob lets us verify a password without touching real keys.
-  canary?: string;
+  header?: VaultHeader;
   entries: VaultEntry[];
 }
 
-let unlockedPassword: string | null = null;
+let unlockedKey: CryptoKey | null = null;
 
 export function isUnlocked(): boolean {
-  return unlockedPassword !== null;
+  return unlockedKey !== null;
 }
 
 export async function isInitialized(): Promise<boolean> {
   const state = await loadState();
-  return state.canary !== undefined;
+  return state.header !== undefined;
 }
 
 export async function initialize(password: string): Promise<void> {
   const state = await loadState();
-  if (state.canary) throw new Error('Vault already initialized');
-  state.canary = await encrypt('moltypass-canary-v1', password);
+  if (state.header) throw new Error('Vault already initialized');
+  // v2.1: PBKDF2 is used unconditionally in tests + fallback when the
+  // Argon2id WASM deriver isn't wired. Real builds override this via the
+  // security workstream's runtime patch (see PLANS/workstreams/security.md).
+  state.header = await createHeader(password, 'pbkdf2');
   await saveState(state);
-  unlockedPassword = password;
+  unlockedKey = await unlockWithHeader(password, state.header);
   scheduleAutolock();
 }
 
 export async function unlock(password: string): Promise<boolean> {
   const state = await loadState();
-  if (!state.canary) return false;
-  try {
-    const decrypted = await decrypt(state.canary, password);
-    if (decrypted !== 'moltypass-canary-v1') return false;
-    unlockedPassword = password;
-    scheduleAutolock();
-    return true;
-  } catch {
-    return false;
-  }
+  if (!state.header) return false;
+  const key = await unlockWithHeader(password, state.header);
+  if (!key) return false;
+  unlockedKey = key;
+  scheduleAutolock();
+  return true;
 }
 
 export function lock(): void {
-  unlockedPassword = null;
-  void chrome.alarms.clear(LOCK_ALARM);
+  unlockedKey = null;
+  // chrome.alarms.clear may be missing in bare test environments; guard.
+  void chrome.alarms?.clear?.(LOCK_ALARM);
 }
 
 export async function touchActivity(): Promise<void> {
-  if (unlockedPassword) scheduleAutolock();
+  if (unlockedKey) scheduleAutolock();
 }
 
 function scheduleAutolock(): void {
-  // Replaces any existing alarm with the same name.
-  void chrome.alarms.create(LOCK_ALARM, { delayInMinutes: LOCK_TIMEOUT_MIN });
+  void chrome.alarms?.create?.(LOCK_ALARM, { delayInMinutes: LOCK_TIMEOUT_MIN });
 }
 
-chrome.alarms.onAlarm.addListener(alarm => {
+// Register once at module load; guarded for test environments.
+chrome.alarms?.onAlarm?.addListener(alarm => {
   if (alarm.name === LOCK_ALARM) lock();
 });
 
@@ -72,15 +77,20 @@ export async function addKey(
   service: ProviderId,
   label: string,
   apiKey: string,
+  notes?: string,
 ): Promise<RedactedVaultEntry> {
-  if (!unlockedPassword) throw new Error('Vault is locked');
+  if (!unlockedKey) throw new Error('Vault is locked');
   const entry: VaultEntry = {
     id: crypto.randomUUID(),
     service,
     label,
-    ciphertext: await encrypt(apiKey, unlockedPassword),
+    ciphertext: await encryptWith(unlockedKey, apiKey),
     createdAt: Date.now(),
   };
+  if (notes && notes.length > 0) {
+    entry.notesCiphertext = await encryptWith(unlockedKey, notes);
+    entry.notesUpdatedAt = Date.now();
+  }
   const state = await loadState();
   state.entries.push(entry);
   await saveState(state);
@@ -94,12 +104,47 @@ export async function removeKey(id: string): Promise<void> {
 }
 
 export async function getKeyPlaintext(id: string): Promise<string> {
-  if (!unlockedPassword) throw new Error('Vault is locked');
+  if (!unlockedKey) throw new Error('Vault is locked');
   scheduleAutolock();
   const state = await loadState();
   const entry = state.entries.find(e => e.id === id);
   if (!entry) throw new Error(`Key not found: ${id}`);
-  return decrypt(entry.ciphertext, unlockedPassword);
+  return decryptWith(unlockedKey, entry.ciphertext);
+}
+
+/**
+ * Read the notes plaintext for an item. Returns empty string if the item has
+ * no notes (legacy entry or explicitly cleared). Requires vault unlocked.
+ */
+export async function getNotes(id: string): Promise<string> {
+  if (!unlockedKey) throw new Error('Vault is locked');
+  scheduleAutolock();
+  const state = await loadState();
+  const entry = state.entries.find(e => e.id === id);
+  if (!entry) throw new Error(`Key not found: ${id}`);
+  if (!entry.notesCiphertext) return '';
+  return decryptWith(unlockedKey, entry.notesCiphertext);
+}
+
+/**
+ * Set (or clear, if `notes === ''`) the notes on an item. Returns the redacted
+ * entry snapshot after the update. Requires vault unlocked.
+ */
+export async function setNotes(id: string, notes: string): Promise<RedactedVaultEntry> {
+  if (!unlockedKey) throw new Error('Vault is locked');
+  scheduleAutolock();
+  const state = await loadState();
+  const entry = state.entries.find(e => e.id === id);
+  if (!entry) throw new Error(`Key not found: ${id}`);
+  if (notes.length === 0) {
+    delete entry.notesCiphertext;
+    delete entry.notesUpdatedAt;
+  } else {
+    entry.notesCiphertext = await encryptWith(unlockedKey, notes);
+    entry.notesUpdatedAt = Date.now();
+  }
+  await saveState(state);
+  return redact(entry);
 }
 
 export async function listEntries(): Promise<RedactedVaultEntry[]> {
@@ -113,8 +158,8 @@ export async function listEntriesForService(service: ProviderId): Promise<Redact
 }
 
 function redact(e: VaultEntry): RedactedVaultEntry {
-  const { ciphertext: _ciphertext, ...rest } = e;
-  return rest;
+  const { ciphertext: _ciphertext, notesCiphertext, ...rest } = e;
+  return { ...rest, hasNotes: notesCiphertext !== undefined };
 }
 
 async function loadState(): Promise<VaultState> {
