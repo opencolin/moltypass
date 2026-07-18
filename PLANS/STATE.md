@@ -8,9 +8,30 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: T+15 complete (release merged → main; **v1.0.0 tagged**)
-- Phase: v1.0.0 launched. 127/127 tests. Council's v1.0 scope fully reached. Next: v2.0 workstreams (auth + dashboard + enterprise-sw + leak per council T+1) — all currently DEFERRED status, ready to spin.
-- Council decision: see [council/v1-scope-decision.md](council/v1-scope-decision.md)
+- Tick: **T+1.f complete. v2.1.0-alpha tagged.**
+- Phase: **v2.1.0-alpha shipped.** 455/455 tests on main. MCP + moltypass:// + item notes + item history merged. Landing page redesigned.
+- New goal (set 2026-07-17): Beat 1Password on AI-key management. **1Password shipped MCP server mid-turn** → v2.1 pivot to MCP as centerpiece.
+- Council decisions:
+  - v1.0: [council/v1-scope-decision.md](council/v1-scope-decision.md)
+  - v2.1 "Beat 1Password": **[council/v21-beat-1password.md](council/v21-beat-1password.md)** (BINDING — 2026-07-17)
+- MCP spec: **[mcp-spec.md](mcp-spec.md)** (12 tools, zero-knowledge, stdio, `moltypass-mcp` binary)
+- 1Password reference: [competitors/1password.md](competitors/1password.md)
+
+## v2.1 workstreams
+
+| # | Name | Worktree | Branch | Status | Tests | Commit |
+|---|---|---|---|---|---|---|
+| 1 | mcp-server | `moltypass-mcp/` | `ws/mcp` | **TOOL SURFACE LANDED** (transport pending) | 49 (of 30+ target) | `@bdc6df6` |
+| 2 | uri-scheme | `moltypass-uri/` | `ws/uri` | **LANDED** | 23 (of 15+ target) | `@dc4866b` |
+| 3 | item-notes | `moltypass-notes/` | `ws/notes` | **LANDED** | 13 (of 10+ target) | `@6a8a40d` |
+| 4 | item-history | `moltypass-history/` | `ws/history` | **LANDED** | 12 (of 12+ target) | `@6bccea8` |
+| 5 | dashboard-rsc | `moltypass-dashboard/` | `ws/dashboard` | IN_PROGRESS (v2.0 carryover) | 269 vs main's 341 | — |
+| 6 | auth-rsc | `moltypass-auth/` | `ws/auth` | IN_PROGRESS (v2.0 carryover) | ? | — |
+| 7 | cli-native-protocol | `moltypass-cli/` | `ws/cli` | **READY TO MERGE** | 15 | `@08b13f2` |
+
+Landing status:
+- **All 4 v2.1 workstreams merged.** +114 net new tests. Tagged v2.1.0-alpha.
+- Punch list before non-alpha: Native Messaging in bin/moltypass-mcp; emit-site wiring; ws/auth + ws/dashboard v2.0 carryover.
 
 ## v1.0 scope (council-decided)
 
@@ -20,22 +41,17 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 | ws            | scope    | status        | worktree                              | next action |
 |---------------|----------|---------------|---------------------------------------|---|
-| test-infra    | v1.0     | ✅ MERGED to main | — (torn down) | done; Playwright comes with detector workstream |
-| audit         | v1.0     | ✅ MERGED to main | — (torn down) | wire audit emits into proxy.ts/permissions.ts/consent.ts during integration tick |
-| security      | v1.0     | ✅ MERGED to main | — (torn down) | wire vault.ts to new header; HKDF for IDB at-rest in T+6+ |
-| detector      | v1.0     | ✅ MERGED to main | — (torn down at T+7) | done; runtime registerContentScripts for custom providers can land in v1.1 |
-| picker        | v1.0     | ✅ MERGED to main | — (torn down at T+13) | done — overlay + entry + bridge + manifest commands/contextMenus |
-| revoke        | v1.0     | ✅ MERGED to main | — (torn down at T+10) | done — revocation + rotation + proxy wiring |
-| release       | v1.0     | TODO          | — (spin at T+14) | first file: `scripts/release.ts` (semver bump + manifest/package sync). Also: `web/app/privacy/page.tsx`, `store/listing.md`, `.github/workflows/release.yml`, `scripts/zip-extension.ts`. CI test-gate already in main from test-infra. |
-| release       | v1.0     | TODO          | — (spin in W6) | CI workflow already in main as part of test-infra; release.ts script + CWS assets remain |
-| detector      | v1.0     | TODO          | —                                     | spin after audit lands; needs audit-log helpers |
-| picker        | v1.0     | TODO          | —                                     | spin after detector (shares `src/background/capture.ts`) |
-| revoke        | v1.0     | TODO          | —                                     | spin after audit lands (needs audit events for revoke kind) |
-| release       | v1.0     | TODO          | —                                     | spin in W6 after detector/picker/revoke/security land |
-| auth          | **CUT → v2.0** | DEFERRED |                                       | not in v1.0 — see council decision |
-| dashboard     | **CUT → v2.0** | DEFERRED |                                       | not in v1.0 |
-| enterprise-sw | **CUT → v2.0** | DEFERRED |                                       | not in v1.0 |
-| leak          | **CUT → v2.0** | DEFERRED |                                       | not in v1.0 |
+| test-infra    | v1.0 | ✅ MERGED          | — | done |
+| audit         | v1.0 | ✅ MERGED          | — | done |
+| security      | v1.0 | ✅ MERGED          | — | done |
+| detector      | v1.0 | ✅ MERGED          | — | done |
+| picker        | v1.0 | ✅ MERGED          | — | done |
+| revoke        | v1.0 | ✅ MERGED          | — | done |
+| release       | v1.0 | ✅ MERGED          | — | done — v1.0.0 tagged |
+| auth          | v2.0 | IN_PROGRESS (T+16) | `moltypass-auth/` (ws/auth) | shared schema landing in dashboard worktree; auth picks up `web/lib/auth/session.ts` after |
+| dashboard     | v2.0 | IN_PROGRESS (T+16) | `moltypass-dashboard/` (ws/dashboard) | own `web/lib/db.ts` extensions (users, memberships, magic_link_tokens, admin_actions, ingest_nonces) first; then RSC routes |
+| enterprise-sw | v2.0 | TODO               | — | spin after auth+dashboard schema lands |
+| leak          | v2.0 | TODO               | — | spin after enterprise-sw |
 
 ## Releases
 
@@ -50,6 +66,21 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 ## Background tasks in flight
 
 (none currently — PM council completed)
+
+## Post-v2 todos (small, cross-cutting)
+
+Not part of a workstream; do opportunistically.
+
+### Branding aliases (see [branding-aliases.md](branding-aliases.md))
+
+- [ ] Add `multipass.chat` as a domain in the Vercel `web` project.
+- [ ] Update DNS on `multipass.chat` → Vercel.
+- [ ] Verify TLS cert provisions for both hosts.
+- [ ] Register `multipass://` URL scheme in `manifest.json` alongside `moltypass://`.
+- [ ] Register `multipass://` in the native-helper URL-handler entries when the CLI daemon lands (v1.1).
+- [ ] Add `multipass` re-export to `@moltypass/sdk` when it lands (v1.1).
+- [ ] Add one-line pointer to branding-aliases.md in `PRD.md` §2.
+- [ ] Add alias footnote to top-level `README.md`.
 
 ## How to resume
 

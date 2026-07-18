@@ -66,7 +66,7 @@ English (initial release). Localization queued for v1.x.
 
 ## Privacy policy URL
 
-https://moltypass.dev/privacy
+https://moltypass.app/privacy
 
 ## Support URL
 

@@ -92,7 +92,7 @@ export function resendDepsFromEnv(env: NodeJS.ProcessEnv): ResendDeps {
   return {
     fetch: globalThis.fetch,
     apiKey: env['RESEND_API_KEY'],
-    from: env['RESEND_FROM'] ?? 'Moltypass <no-reply@moltypass.dev>',
+    from: env['RESEND_FROM'] ?? 'Moltypass <no-reply@moltypass.app>',
     log: console.log.bind(console),
   };
 }

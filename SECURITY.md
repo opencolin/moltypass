@@ -6,7 +6,7 @@ This document is the authoritative threat model and security policy for Moltypas
 
 ## Reporting a vulnerability
 
-Email `security@moltypass.dev` (PGP key TBD before v1.0 public launch). We aim to acknowledge within 72 hours and remediate critical issues within 14 days.
+Email `security@moltypass.app` (PGP key TBD before v1.0 public launch). We aim to acknowledge within 72 hours and remediate critical issues within 14 days.
 
 Do not file public issues for security vulnerabilities.
 

@@ -1,5 +1,19 @@
 import type { Metadata } from 'next';
+import { Fraunces, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-serif',
+  display: 'swap',
+  axes: ['SOFT', 'WONK', 'opsz'],
+});
+
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Moltypass — Encrypted vault for AI API keys',
@@ -9,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${fraunces.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   );

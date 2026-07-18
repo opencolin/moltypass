@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+// Entry point for the `moltypass-mcp` binary. Wires the MCP stdio server
+// to the Native Messaging daemon-client so an AI agent (Cursor, Claude
+// Desktop, Kiro, Continue, Aider) can invoke tools via MCP and reach the
+// user's local Moltypass daemon.
+//
+// See PLANS/mcp-spec.md for install instructions.
+
+// Native Messaging transport is wired in T+1.f; until then we surface a
+// helpful error so the client sees a structured tool-call failure rather
+// than a mysterious hang.
+async function main() {
+  const { runStdio } = await import('../src/mcp/server.js');
+  const daemon = {
+    async listProviders() { throw daemonNotRunning(); },
+    async listKeys() { throw daemonNotRunning(); },
+    async listGrants() { throw daemonNotRunning(); },
+    async listTools() { throw daemonNotRunning(); },
+    async listAnomalies() { throw daemonNotRunning(); },
+    async itemHistory() { throw daemonNotRunning(); },
+    async annotateItem() { throw daemonNotRunning(); },
+    async revokeGrant() { throw daemonNotRunning(); },
+    async captureKey() { throw daemonNotRunning(); },
+    async rotateKey() { throw daemonNotRunning(); },
+    async exec() { throw daemonNotRunning(); },
+    async uriLintCheck() { throw daemonNotRunning(); },
+  };
+  await runStdio(daemon);
+}
+
+function daemonNotRunning() {
+  return new Error(
+    'daemon_not_running: The Moltypass daemon is not running. Install and start Moltypass from https://moltypass.app to use MCP tools.',
+  );
+}
+
+main().catch(err => {
+  // Log to stderr so it doesn't corrupt the JSON-RPC stdout stream.
+  process.stderr.write('moltypass-mcp: ' + (err instanceof Error ? err.message : String(err)) + '\n');
+  process.exit(1);
+});
