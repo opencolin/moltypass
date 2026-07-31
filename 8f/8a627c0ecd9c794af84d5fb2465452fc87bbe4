@@ -1,0 +1,42 @@
+src/cli/fixtures/fake-daemon.ts
+  s_02f6a9edeb1f89::t_874685e4111638 1-55
+src/cli/catalog.ts
+  s_02f6a9edeb1f89::t_bc3bcff6c323c3 1-111
+tests/cli-argv.spec.ts
+  s_02f6a9edeb1f89::t_748b142cf99ecb 1-118
+src/cli/redact.ts
+  s_02f6a9edeb1f89::t_ff5ac8ec91f7ca 5-16,20-21,36,42-49,51-61,64-67,73-98
+  s_02f6a9edeb1f89::t_227e0f71f2b13e 1-4,17-19,22-35,37-41,50,62-63,68-72,99
+tests/cli-catalog.spec.ts
+  s_02f6a9edeb1f89::t_6caafa52908345 1-41
+src/cli/argv.ts
+  s_02f6a9edeb1f89::t_ce21aecc2659d6 1-125
+bin/moltypass
+  s_02f6a9edeb1f89::t_f68f417e99e318 1-136
+src/cli/types.ts
+  s_02f6a9edeb1f89::t_95e332e33cf6bf 1-17,25-34,36-37,39-41,43-53
+  s_02f6a9edeb1f89::t_65c0fd8ce9b36e 18-24,35,38,42
+tests/cli-runner.spec.ts
+  s_02f6a9edeb1f89::t_a760c8e7cbbdf3 1-267
+src/cli/runner.ts
+  s_02f6a9edeb1f89::t_8db46dbe1b298d 1-123
+tests/cli-redact-stream.spec.ts
+  s_02f6a9edeb1f89::t_2fc671cb6ba588 1-54,56,64-89
+  s_02f6a9edeb1f89::t_15e71a00deee70 55,57-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "8f8a627c0ecd9c794af84d5fb2465452fc87bbe4",
+  "prompts": {},
+  "sessions": {
+    "s_02f6a9edeb1f89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7569849-bc62-4bcb-9f46-5789eec43850",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "opencolin <colin@lowenberg.org>"
+    }
+  }
+}
