@@ -8,8 +8,11 @@ Build the ultimate API key web browser extension that installs in Chrome and let
 
 ## Current tick
 
-- Tick: **T+1.f complete. v2.1.0-alpha tagged.**
-- Phase: **v2.1.0-alpha shipped.** 455/455 tests on main. MCP + moltypass:// + item notes + item history merged. Landing page redesigned.
+- Tick: **T+2.c complete. v2.5.0-alpha tagged.**
+- Phase: **v2.5.0-alpha shipped.** 569/569 tests on main. Watchtower for AI keys + moltypass CLI scaffold merged.
+- New goal (set 2026-07-30): Build v2.5 with council + worktrees + 30s ticks + docs — **complete**.
+- Council decision (v2.5): [council/v25-developer-parity.md](council/v25-developer-parity.md) (binding, unanimous on A+D, near-unanimous on F+G).
+- Pending v2.5.0 (non-alpha): Native Messaging daemon-client (T+3); emit-site wiring for Watchtower; MCP list_watchtower_findings tool.
 - New goal (set 2026-07-17): Beat 1Password on AI-key management. **1Password shipped MCP server mid-turn** → v2.1 pivot to MCP as centerpiece.
 - Council decisions:
   - v1.0: [council/v1-scope-decision.md](council/v1-scope-decision.md)

@@ -304,3 +304,36 @@ Worktrees retained for follow-up (ws/mcp for T+1.g Native Messaging, ws/dashboar
 - 455/455 tests
 - 12 MCP tools shipped, zero-knowledge invariant tested at three layers
 - 1P competitive gap closed: `op://` parity (moltypass://), notes, history, MCP with SUPERSET of 1P's 7 tools
+
+---
+
+## T+2 (v2.5) · New goal set: "1P developer parity" release
+
+- Date: 2026-07-30
+- Directive: build v2.5 with fan-out workflows using worktrees, PM council, 30s ticks, docs.
+- Prior state: v2.1.0-alpha tagged (499/499 tests + GitHub Release). Deep-dive research on 1P developer surface complete.
+- Interpretation: v2.5 candidate list is in PLANS/competitors/1password-developer-features.md — 8 candidates A-H. Focused 3-PM council (Individual-Dev / Enterprise / Ex-1P) scoring which of A-H land in v2.5, which are stretch, which push to v3.0.
+- Tick cadence: 30s Monitor (task b0kngwgi7).
+- Prior worktrees still around: ws/uri, ws/notes, ws/history, ws/mcp (merged, safe to prune), ws/auth (fast-forwarded to main), ws/cli (merged), ws/dashboard (merged).
+
+## T+2.a — ws/watchtower `@6361b9f` merged as `@04b3e1f`
+5 local Watchtower checks + orchestrator + 24 tests. Zero-plaintext discipline: disk.plaintext delegates match to caller callback. Owns the "1P has this, we don't" lane for API keys.
+
+## T+2.b — ws/exec `@8f8a627` merged as `@0563ec5`
+moltypass CLI scaffold: argv parser + 15-tool catalog + spawn+redact runner + streaming redactor + bin. 46 tests. Native Messaging daemon-client is stubbed (returns daemon_not_running, exit 74) until T+3.
+
+## T+2.c — Tagged **v2.5.0-alpha** on `main`
+569/569 tests. Was 499. +70 net new. Two workstreams merged in council order (watchtower → exec).
+
+Pending v2.5 → v2.5.0 (non-alpha):
+- Native Messaging daemon-client implementation for both bin/moltypass and bin/moltypass-mcp (T+3)
+- Emit-site wiring for Watchtower findings (chrome.alarms + popup dashboard chip)
+- MCP tool `list_watchtower_findings`
+- README updates for the moltypass CLI + install instructions
+- v2.5 stretch: moltypass env --tool <name> write-side (item B)
+
+## STATE snapshot at v2.5.0-alpha
+
+- main @ `0563ec5` — MCP tool surface + moltypass:// + item notes + item history + Vault Ledger landing + Native protocol + Dashboard filter/query/action + Watchtower + CLI scaffold
+- **569/569 tests**
+- 5 GitHub tags: v0.1.0-internal, v0.5.0-alpha, v0.9.0-beta, v1.0.0, v2.0.0, v2.1.0-alpha, **v2.5.0-alpha**
