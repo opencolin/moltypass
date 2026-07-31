@@ -1,0 +1,23 @@
+src/watchtower/types.ts
+  s_02f6a9edeb1f89::t_4273a28d424aa2 1-129
+tests/watchtower.spec.ts
+  s_02f6a9edeb1f89::t_4ed1129fbc9147 1-338
+src/watchtower/checks.ts
+  s_02f6a9edeb1f89::t_901c722d770719 1-272
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "6361b9f0a04336aead50f82c412dfa817d160315",
+  "prompts": {},
+  "sessions": {
+    "s_02f6a9edeb1f89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7569849-bc62-4bcb-9f46-5789eec43850",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "opencolin <colin@lowenberg.org>"
+    }
+  }
+}
