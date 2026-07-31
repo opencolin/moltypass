@@ -1,0 +1,19 @@
+PLANS/competitors/1password-developer-features.md
+  s_02f6a9edeb1f89::t_0f44ea31f1f30c 1-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "5ec5c372157d11c63f9b3665163fb66bcb8f0ecf",
+  "prompts": {},
+  "sessions": {
+    "s_02f6a9edeb1f89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7569849-bc62-4bcb-9f46-5789eec43850",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "opencolin <colin@lowenberg.org>"
+    }
+  }
+}
