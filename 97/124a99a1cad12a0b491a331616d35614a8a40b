@@ -1,0 +1,35 @@
+PLANS/STATE.md
+  s_02f6a9edeb1f89::t_f11c99fedfb8ee 11-15
+PLANS/LOG.md
+  s_02f6a9edeb1f89::t_faad1b60fbf34f 307-339
+PLANS/council/v25-developer-parity.md
+  s_cbfc88b8fa26fc::t_24e66dd3e3f969 1-88
+PLANS/workstreams/exec.md
+  s_02f6a9edeb1f89::t_4861ccde3edd7e 1-58
+PLANS/workstreams/watchtower.md
+  s_02f6a9edeb1f89::t_aece6b411178f5 1-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "97124a99a1cad12a0b491a331616d35614a8a40b",
+  "prompts": {},
+  "sessions": {
+    "s_02f6a9edeb1f89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7569849-bc62-4bcb-9f46-5789eec43850",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "opencolin <colin@lowenberg.org>"
+    },
+    "s_cbfc88b8fa26fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91364208-c9b8-461d-a524-ab0034079597",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "opencolin <colin@lowenberg.org>"
+    }
+  }
+}
