@@ -1,0 +1,136 @@
+#!/usr/bin/env node
+// The `moltypass` CLI. Dispatches subcommands defined in src/cli/argv.ts to
+// the runner + daemon-client. Ships v2.5 with the argv parser, tool catalog,
+// exec runner, and streaming redactor fully implemented. The Native Messaging
+// daemon-client is stubbed pending v2.5 T+3 — until then, `exec` returns a
+// structured daemon_not_running error so the CLI can be installed and its
+// argv-shape tested without a running daemon.
+
+async function main() {
+  const { parseArgv } = await import('../src/cli/argv.js');
+  const cmd = parseArgv(process.argv.slice(2));
+
+  switch (cmd.kind) {
+    case 'help':
+      printHelp(cmd.topic);
+      return 0;
+    case 'version':
+      process.stdout.write('moltypass 2.5.0-alpha\n');
+      return 0;
+    case 'error':
+      process.stderr.write('moltypass: ' + cmd.message + '\n');
+      process.stderr.write('Run `moltypass help` for usage.\n');
+      return 2;
+    case 'status':
+      process.stdout.write('moltypass daemon: NOT RUNNING (v2.5.0-alpha ships CLI + stubs; daemon lands v2.5 T+3)\n');
+      return 0;
+    case 'diagnose':
+      await runDiagnose();
+      return 0;
+    case 'exec':
+    case 'hook':
+    case 'env':
+      process.stderr.write(
+        'moltypass: daemon_not_running — the Moltypass daemon has not launched yet.\n' +
+        'Install and unlock Moltypass from https://moltypass.app first, then re-run.\n' +
+        '(v2.5.0-alpha ships the CLI surface; the Native Messaging daemon-client lands in v2.5 T+3.)\n',
+      );
+      return 74;  // EX_IOERR
+    default: {
+      const unreachable: never = cmd;
+      throw new Error('unreachable: ' + JSON.stringify(unreachable));
+    }
+  }
+}
+
+function printHelp(topic) {
+  const lines = topic ? helpTopic(topic) : helpGeneral();
+  process.stdout.write(lines.join('\n') + '\n');
+}
+
+function helpGeneral() {
+  return [
+    'moltypass — the local vault for AI provider keys',
+    '',
+    'Usage: moltypass <command> [flags]',
+    '',
+    'Commands:',
+    '  exec <cmd> [args...]         Run <cmd> with the right AI keys injected',
+    '  hook [--tool <name>]         Validation hook (fails fast if vault locked)',
+    '  env  --tool <name> [--write] Write a managed .env for tools that refuse env inheritance',
+    '  status                       Check daemon status',
+    '  diagnose                     Diagnose MCP + daemon integration',
+    '  help [topic]                 Show help for a command',
+    '  version                      Print version',
+    '',
+    'Examples:',
+    '  moltypass exec hermes greet',
+    '  moltypass exec --label work aider .',
+    '  moltypass exec -- npm run dev   # -- protects child flags',
+    '',
+    'See https://moltypass.app for install + docs.',
+  ];
+}
+
+function helpTopic(topic) {
+  const map = {
+    exec: [
+      'moltypass exec — run a command with AI keys injected',
+      '',
+      'Usage: moltypass exec [--label <name>] [--strict] <cmd> [args...]',
+      '',
+      'The tool-aware catalog maps <cmd> to the env vars it wants. e.g.',
+      '  moltypass exec hermes greet',
+      '    → sets NEBIUS_API_KEY from your vault, spawns hermes, cleans up on exit.',
+      '',
+      'Any key-shaped strings in stdout/stderr are replaced with',
+      '[REDACTED-BY-MOLTYPASS] before reaching your terminal.',
+    ],
+    hook: [
+      'moltypass hook — validation-hook wrapper',
+      '',
+      'Meant to be added to a tool config so the tool refuses to launch when',
+      'the vault is locked or the required key is missing. Fail-fast is',
+      'better than a mysterious runtime error.',
+    ],
+    env: [
+      'moltypass env --tool <name> [--write <path>]',
+      '',
+      'For CLIs that refuse to read env from the parent process, write a',
+      'managed .env at <path>. Moltypass tracks it and re-writes on rotation.',
+    ],
+    diagnose: [
+      'moltypass diagnose — troubleshoot MCP client integration',
+      '',
+      'Prints the effective config paths for supported MCP clients (Claude',
+      'Desktop, Cursor, Kiro, Continue) and attempts a self-test round-trip.',
+    ],
+  };
+  return map[topic] || helpGeneral();
+}
+
+async function runDiagnose() {
+  const home = process.env.HOME || process.env.USERPROFILE || '~';
+  process.stdout.write('moltypass diagnose — checking client configuration paths\n\n');
+  const checks = [
+    ['Claude Desktop (macOS)', `${home}/Library/Application Support/Claude/claude_desktop_config.json`],
+    ['Claude Desktop (Windows)', '%APPDATA%\\Claude\\claude_desktop_config.json'],
+    ['Cursor',                    `${home}/.cursor/mcp.json`],
+    ['Kiro',                      `${home}/.kiro/mcp.json`],
+    ['Continue',                  `${home}/.continue/config.json`],
+    ['MCP logs (macOS)',          `${home}/Library/Logs/Claude/mcp.log`],
+  ];
+  for (const [name, path] of checks) {
+    process.stdout.write(`  ${name.padEnd(28)} → ${path}\n`);
+  }
+  process.stdout.write('\nTo connect a client, add this to its config:\n');
+  process.stdout.write('  { "mcpServers": { "moltypass": { "command": "moltypass-mcp" } } }\n');
+  process.stdout.write('\nDaemon status: NOT RUNNING (v2.5.0-alpha stub)\n');
+}
+
+main()
+  .then(code => process.exit(code ?? 0))
+  .catch(err => {
+    process.stderr.write('moltypass: ' + (err instanceof Error ? err.message : String(err)) + '\n');
+    process.exit(1);
+  });
