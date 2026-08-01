@@ -23,7 +23,7 @@ pnpm install && pnpm build
 **Terminal** — macOS / Linux / Windows CLI (v1.1, in progress):
 
 ```sh
-brew install moltypass/tap/moltypass   # macOS
+brew install opencolin/tap/moltypass   # macOS
 # Linux + Windows packages follow on the same release.
 ```
 

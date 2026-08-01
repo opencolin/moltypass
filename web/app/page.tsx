@@ -64,7 +64,7 @@ function Hero() {
             Add to Chrome — free
           </a>
           <a className="btn btn-secondary btn-lg" href="#brew">
-            <code style={{ background: 'transparent', color: 'inherit' }}>brew install moltypass</code>
+            <code style={{ background: 'transparent', color: 'inherit' }}>brew install opencolin/tap/moltypass</code>
           </a>
           <a className="btn btn-ghost btn-lg" href="#enterprise">
             For teams →
