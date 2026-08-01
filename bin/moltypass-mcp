@@ -1,41 +1,102 @@
 #!/usr/bin/env node
-// Entry point for the `moltypass-mcp` binary. Wires the MCP stdio server
-// to the Native Messaging daemon-client so an AI agent (Cursor, Claude
-// Desktop, Kiro, Continue, Aider) can invoke tools via MCP and reach the
-// user's local Moltypass daemon.
+// Entry point for the `moltypass-mcp` binary. Plain JS — no TypeScript,
+// no imports from src/. Speaks minimal JSON-RPC 2.0 line-delimited over
+// stdio so an AI agent (Cursor, Claude Desktop, Kiro, Continue, Aider)
+// can complete an MCP initialize/tools/list handshake against the alpha
+// even though the Native Messaging daemon-client isn't wired yet.
 //
-// See PLANS/mcp-spec.md for install instructions.
+// Every tools/call returns a structured daemon_not_running error until
+// v2.5.0 non-alpha ships the daemon transport.
 
-// Native Messaging transport is wired in T+1.f; until then we surface a
-// helpful error so the client sees a structured tool-call failure rather
-// than a mysterious hang.
+'use strict';
+
+const PROTOCOL_VERSION = '2026-06-01';
+const SERVER_INFO = { name: 'moltypass-mcp', version: '2.5.0-alpha' };
+const SERVER_CAPABILITIES = { tools: { listChanged: false } };
+
+// Kept intentionally in-sync with src/mcp/tools.ts TOOL_DEFS (12 tools).
+// The bin declares them here so clients can enumerate + build UI even
+// before the daemon lands. The keys of `input_schema` follow the JSON
+// Schema shape MCP expects.
+const TOOL_DEFS = [
+  { name: 'list_providers', description: 'List the AI providers Moltypass knows how to capture and proxy keys for.', input_schema: { type: 'object', properties: {}, additionalProperties: false } },
+  { name: 'list_keys', description: 'List vault items (metadata only — no key values). Optionally filter by provider.', input_schema: { type: 'object', properties: { provider: { type: 'string' } }, additionalProperties: false } },
+  { name: 'list_grants', description: 'List active per-origin/per-tool consent grants. Optionally filter by key_id or origin.', input_schema: { type: 'object', properties: { key_id: { type: 'string' }, origin: { type: 'string' } }, additionalProperties: false } },
+  { name: 'list_tools', description: 'List the tool-aware CLI catalog Moltypass knows how to run (moltypass exec <tool>).', input_schema: { type: 'object', properties: {}, additionalProperties: false } },
+  { name: 'list_anomalies', description: 'List volume anomalies flagged by the extension since (optional) ms timestamp.', input_schema: { type: 'object', properties: { since: { type: 'number' } }, additionalProperties: false } },
+  { name: 'item_history', description: 'Return the mutation log for one vault item, newest first.', input_schema: { type: 'object', properties: { key_id: { type: 'string' }, limit: { type: 'number' } }, required: ['key_id'], additionalProperties: false } },
+  { name: 'annotate_item', description: 'Set the free-text notes on a vault item. Empty string clears.', input_schema: { type: 'object', properties: { key_id: { type: 'string' }, notes: { type: 'string' } }, required: ['key_id', 'notes'], additionalProperties: false } },
+  { name: 'revoke_grant', description: 'Revoke a specific consent grant. In-flight calls using it are terminated via revoke epoch.', input_schema: { type: 'object', properties: { grant_id: { type: 'string' } }, required: ['grant_id'], additionalProperties: false } },
+  { name: 'capture_key', description: 'Trigger the browser capture flow for a provider. Returns a capture URL and a placeholder key id.', input_schema: { type: 'object', properties: { provider: { type: 'string' }, label: { type: 'string' }, notes: { type: 'string' } }, required: ['provider', 'label'], additionalProperties: false } },
+  { name: 'rotate_key', description: 'Rotate a key. Crash-safe: writes the new key and mirrors grants before retiring the old.', input_schema: { type: 'object', properties: { key_id: { type: 'string' }, new_key_from_capture: { type: 'string' } }, required: ['key_id'], additionalProperties: false } },
+  { name: 'exec', description: 'Run a command with the right AI provider keys injected via moltypass exec. Returns stdout/stderr/exit code with any key-shaped substrings redacted.', input_schema: { type: 'object', properties: { command: { type: 'array', items: { type: 'string' } }, provider_hint: { type: 'string' }, label: { type: 'string' }, cwd: { type: 'string' }, timeout_ms: { type: 'number' } }, required: ['command'], additionalProperties: false } },
+  { name: 'uri_lint', description: 'Validate a moltypass:// URI. Reports whether the syntax is legal and whether the referenced item exists. NEVER returns the value.', input_schema: { type: 'object', properties: { uri: { type: 'string' } }, required: ['uri'], additionalProperties: false } },
+];
+
+function ok(id, result) { return { jsonrpc: '2.0', id, result }; }
+function err(id, code, message) { return { jsonrpc: '2.0', id, error: { code, message } }; }
+
+function handleRpc(msg) {
+  if (!msg || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') {
+    if (msg && msg.id !== undefined && msg.id !== null) return err(msg.id, -32600, 'invalid JSON-RPC request');
+    return null;
+  }
+  const isNotification = msg.id === undefined || msg.id === null;
+  const id = isNotification ? null : msg.id;
+  switch (msg.method) {
+    case 'initialize':
+      return ok(id, { protocolVersion: PROTOCOL_VERSION, serverInfo: SERVER_INFO, capabilities: SERVER_CAPABILITIES });
+    case 'initialized':
+    case 'notifications/initialized':
+    case 'notifications/cancelled':
+      return null;
+    case 'ping':
+      return ok(id, {});
+    case 'tools/list':
+      return ok(id, { tools: TOOL_DEFS.map(t => ({ ...t })) });
+    case 'tools/call':
+      return ok(id, {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            error: {
+              code: 'daemon_not_running',
+              message: 'The Moltypass daemon has not launched yet. Install and unlock Moltypass from https://moltypass.app to use MCP tools. (v2.5.0-alpha ships the MCP handshake + tool schemas; the Native Messaging daemon-client lands in v2.5.0 non-alpha.)',
+            },
+          }),
+        }],
+        isError: true,
+      });
+    case 'shutdown':
+      return ok(id, {});
+    default:
+      if (isNotification) return null;
+      return err(id, -32601, 'method not found: ' + msg.method);
+  }
+}
+
 async function main() {
-  const { runStdio } = await import('../src/mcp/server.js');
-  const daemon = {
-    async listProviders() { throw daemonNotRunning(); },
-    async listKeys() { throw daemonNotRunning(); },
-    async listGrants() { throw daemonNotRunning(); },
-    async listTools() { throw daemonNotRunning(); },
-    async listAnomalies() { throw daemonNotRunning(); },
-    async itemHistory() { throw daemonNotRunning(); },
-    async annotateItem() { throw daemonNotRunning(); },
-    async revokeGrant() { throw daemonNotRunning(); },
-    async captureKey() { throw daemonNotRunning(); },
-    async rotateKey() { throw daemonNotRunning(); },
-    async exec() { throw daemonNotRunning(); },
-    async uriLintCheck() { throw daemonNotRunning(); },
-  };
-  await runStdio(daemon);
+  let buf = '';
+  for await (const chunk of process.stdin) {
+    buf += chunk.toString('utf8');
+    let nl;
+    while ((nl = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (!line) continue;
+      let parsed;
+      try { parsed = JSON.parse(line); }
+      catch (e) {
+        process.stdout.write(JSON.stringify(err(null, -32700, e instanceof Error ? e.message : 'parse failed')) + '\n');
+        continue;
+      }
+      const resp = handleRpc(parsed);
+      if (resp) process.stdout.write(JSON.stringify(resp) + '\n');
+    }
+  }
 }
 
-function daemonNotRunning() {
-  return new Error(
-    'daemon_not_running: The Moltypass daemon is not running. Install and start Moltypass from https://moltypass.app to use MCP tools.',
-  );
-}
-
-main().catch(err => {
-  // Log to stderr so it doesn't corrupt the JSON-RPC stdout stream.
-  process.stderr.write('moltypass-mcp: ' + (err instanceof Error ? err.message : String(err)) + '\n');
+main().catch(e => {
+  process.stderr.write('moltypass-mcp: ' + (e instanceof Error ? e.message : String(e)) + '\n');
   process.exit(1);
 });
