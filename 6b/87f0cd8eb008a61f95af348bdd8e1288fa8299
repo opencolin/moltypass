@@ -1,0 +1,21 @@
+bin/moltypass
+  s_02f6a9edeb1f89::t_9ebdfa63e1e124 2-12,14,16-17,28,53-77,80,84,86-89,92,99-130
+bin/moltypass-mcp
+  s_02f6a9edeb1f89::t_1ee8f923bbe864 2-6,8-9,11-75,78-96,99-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "6b87f0cd8eb008a61f95af348bdd8e1288fa8299",
+  "prompts": {},
+  "sessions": {
+    "s_02f6a9edeb1f89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7569849-bc62-4bcb-9f46-5789eec43850",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "opencolin <colin@lowenberg.org>"
+    }
+  }
+}
