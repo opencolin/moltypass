@@ -1,130 +1,375 @@
 #!/usr/bin/env node
-// The `moltypass` CLI. Plain JS entry — no TypeScript, no cross-tree
-// imports, so it runs from a Homebrew install without a build step.
+// `moltypass` CLI — end-to-end. As of v2.5.0-beta this actually resolves
+// keys from an on-disk vault and injects them into the child process.
+// Ships as plain JS with plain-JS deps under lib/ so Homebrew installs
+// without a build step.
 //
-// v2.5.0-alpha ships the argv surface + inline help/version/status/diagnose.
-// exec / hook / env return a structured daemon_not_running (EX_IOERR=74)
-// until the Native Messaging daemon-client lands in v2.5.0 non-alpha.
-//
-// The full argv parser + tool catalog + spawn+redact runner live in
-// src/cli/*.ts; those are consumed by tests + by the packaged daemon
-// integration in T+3. The bin script keeps them at arm's length so we
-// don't need to bundle TypeScript for the alpha.
+// Subcommands:
+//   init                      Create a new vault (prompts for password)
+//   add <provider> <label>    Add a key (prompts for password + key value)
+//   list [--json]             List vault entries (metadata only)
+//   remove <id>               Remove an entry by id
+//   unlock                    Enter password once; cached for 15 min
+//   lock                      Clear the session cache
+//   exec <cmd> [args...]      Run <cmd> with the right keys injected
+//   status                    Vault + session status
+//   diagnose                  Print MCP client config paths
+//   help [topic]              Show help
+//   version                   Print version
 
 'use strict';
 
-const args = process.argv.slice(2);
-const head = args[0];
+const path = require('node:path');
+const backend = require(path.join(__dirname, '..', 'lib', 'backend.cjs'));
+const catalog = require(path.join(__dirname, '..', 'lib', 'catalog.cjs'));
+const { runExec } = require(path.join(__dirname, '..', 'lib', 'runner.cjs'));
 
-function printHelp(topic) {
+const VERSION = '2.5.0-beta';
+
+async function main() {
+  const args = process.argv.slice(2);
+  const head = args[0];
+
+  if (!head || head === '--help' || head === '-h' || head === 'help') return cmdHelp(args[1]);
+  if (head === '--version' || head === '-v' || head === 'version') return cmdVersion();
+  if (head === 'init') return cmdInit();
+  if (head === 'add') return cmdAdd(args.slice(1));
+  if (head === 'list' || head === 'ls') return cmdList(args.slice(1));
+  if (head === 'remove' || head === 'rm') return cmdRemove(args.slice(1));
+  if (head === 'unlock') return cmdUnlock();
+  if (head === 'lock') return cmdLock();
+  if (head === 'exec') return cmdExec(args.slice(1));
+  if (head === 'status') return cmdStatus();
+  if (head === 'diagnose') return cmdDiagnose();
+  if (head === 'hook' || head === 'env') return notImplemented(head);
+
+  process.stderr.write('moltypass: unknown subcommand: ' + head + '\n');
+  process.stderr.write('Run `moltypass help` for usage.\n');
+  return 2;
+}
+
+// ------- commands -------
+
+function cmdVersion() {
+  process.stdout.write('moltypass ' + VERSION + '\n');
+  return 0;
+}
+
+function cmdHelp(topic) {
   const map = {
+    init: [
+      'moltypass init — create a new vault',
+      '',
+      'Prompts for a master password, then creates',
+      '  ' + backend.vaultPath(),
+      'with permissions 0600. The vault is encrypted with your password',
+      'derived through PBKDF2-SHA256 (600k iterations); values inside are',
+      'AES-GCM-encrypted. Nothing leaves your machine.',
+    ],
+    add: [
+      'moltypass add <provider> <label>',
+      '',
+      'Prompts for your master password (or reuses the session cache),',
+      'then prompts for the API key value on stderr (echo hidden) and',
+      'stores it encrypted.',
+      '',
+      'Example:',
+      '  moltypass add anthropic personal',
+      '  moltypass add openai work',
+    ],
     exec: [
-      'moltypass exec — run a command with AI keys injected',
+      'moltypass exec [--label <name>] <cmd> [args...]',
       '',
-      'Usage: moltypass exec [--label <name>] [--strict] <cmd> [args...]',
+      'Looks <cmd> up in the tool-aware catalog (hermes, aider, claude,',
+      'continue, cursor, ...), decrypts the matching provider key(s), and',
+      'spawns <cmd> with the right env vars set. Any key-shaped substring',
+      'in the child\'s stdout/stderr is replaced with [REDACTED-BY-MOLTYPASS]',
+      'before reaching your terminal.',
       '',
-      'The tool-aware catalog maps <cmd> to the env vars it wants. e.g.',
-      '  moltypass exec hermes greet',
-      '    -> sets NEBIUS_API_KEY from your vault, spawns hermes, cleans up on exit.',
-      '',
-      'Any key-shaped strings in stdout/stderr are replaced with',
-      '[REDACTED-BY-MOLTYPASS] before reaching your terminal.',
-    ],
-    hook: [
-      'moltypass hook — validation-hook wrapper',
-      '',
-      'Meant to be added to a tool config so the tool refuses to launch when',
-      'the vault is locked or the required key is missing. Fail-fast is',
-      'better than a mysterious runtime error.',
-    ],
-    env: [
-      'moltypass env --tool <name> [--write <path>]',
-      '',
-      'For CLIs that refuse to read env from the parent process, write a',
-      'managed .env at <path>. Moltypass tracks it and re-writes on rotation.',
+      'Examples:',
+      '  moltypass exec claude "hello"',
+      '  moltypass exec --label work hermes greet',
+      '  moltypass exec -- npm run test   # -- protects child flags',
     ],
     diagnose: [
       'moltypass diagnose — troubleshoot MCP client integration',
       '',
-      'Prints the effective config paths for supported MCP clients (Claude',
-      'Desktop, Cursor, Kiro, Continue) and attempts a self-test round-trip.',
+      'Prints the effective config paths for supported MCP clients',
+      '(Claude Desktop, Cursor, Kiro, Continue) and reports vault status.',
     ],
   };
   if (topic && map[topic]) {
     process.stdout.write(map[topic].join('\n') + '\n');
-    return;
+    return 0;
   }
   process.stdout.write([
-    'moltypass — the local vault for AI provider keys',
+    'moltypass ' + VERSION + ' — the local vault for AI provider keys',
     '',
     'Usage: moltypass <command> [flags]',
     '',
     'Commands:',
-    '  exec <cmd> [args...]         Run <cmd> with the right AI keys injected',
-    '  hook [--tool <name>]         Validation hook (fails fast if vault locked)',
-    '  env  --tool <name> [--write] Write a managed .env for tools that refuse env inheritance',
-    '  status                       Check daemon status',
-    '  diagnose                     Diagnose MCP + daemon integration',
-    '  help [topic]                 Show help for a command',
-    '  version                      Print version',
+    '  init                          Create a new vault',
+    '  add <provider> <label>        Store a key (encrypted)',
+    '  list [--json]                 List vault entries (metadata only)',
+    '  remove <id>                   Remove an entry',
+    '  unlock                        Enter password once; cached 15 min',
+    '  lock                          Clear the session cache',
+    '  exec <cmd> [args...]          Run <cmd> with keys injected',
+    '  status                        Vault + session status',
+    '  diagnose                      MCP client config paths',
+    '  help [topic]                  Show help',
+    '  version                       Print version',
     '',
-    'Examples:',
-    '  moltypass exec hermes greet',
-    '  moltypass exec --label work aider .',
-    '  moltypass exec -- npm run dev   # -- protects child flags',
+    'Example flow:',
+    '  moltypass init',
+    '  moltypass add anthropic personal',
+    '  moltypass exec claude "hello"',
     '',
-    'See https://moltypass.app for install + docs.',
+    'See https://moltypass.app for docs.',
   ].join('\n') + '\n');
+  return 0;
 }
 
-function runDiagnose() {
-  const home = process.env.HOME || process.env.USERPROFILE || '~';
-  process.stdout.write('moltypass diagnose — checking client configuration paths\n\n');
-  const checks = [
-    ['Claude Desktop (macOS)',   home + '/Library/Application Support/Claude/claude_desktop_config.json'],
-    ['Claude Desktop (Windows)', '%APPDATA%\\Claude\\claude_desktop_config.json'],
-    ['Cursor',                   home + '/.cursor/mcp.json'],
-    ['Kiro',                     home + '/.kiro/mcp.json'],
-    ['Continue',                 home + '/.continue/config.json'],
-    ['MCP logs (macOS)',         home + '/Library/Logs/Claude/mcp.log'],
-  ];
-  for (const [name, path] of checks) {
-    process.stdout.write('  ' + name.padEnd(28) + ' -> ' + path + '\n');
+async function cmdInit() {
+  const file = backend.vaultPath();
+  if (await backend.vaultExists(file)) {
+    process.stderr.write('Vault already exists at ' + file + '\n');
+    process.stderr.write('Delete it first if you want to start over: rm ' + JSON.stringify(file) + '\n');
+    return 3;
   }
-  process.stdout.write('\nTo connect a client, add this to its config:\n');
+  process.stderr.write('Creating vault at ' + file + '\n');
+  const password = await backend.promptPassword('New master password: ', { confirm: true, allowEnv: false });
+  if (password.length < 8) {
+    process.stderr.write('Password too short (minimum 8 characters).\n');
+    return 4;
+  }
+  process.stderr.write('Deriving key (PBKDF2, this may take a second)... ');
+  await backend.initVault(password, file);
+  process.stderr.write('done.\n');
+  process.stderr.write('Vault ready. Add a key: moltypass add anthropic personal\n');
+  return 0;
+}
+
+async function cmdAdd(args) {
+  const provider = args[0];
+  const label = args[1] || 'default';
+  if (!provider) {
+    process.stderr.write('Usage: moltypass add <provider> [label]\n');
+    return 2;
+  }
+  const { vault, key } = await backend.getUnlockedVault();
+  const value = await backend.promptPassword('API key for ' + provider + '/' + label + ': ', { allowEnv: false });
+  if (!value) {
+    process.stderr.write('empty key — aborted\n');
+    return 4;
+  }
+  const entry = await backend.addEntry(vault, key, provider, label, value);
+  await backend.saveVaultFile(vault);
+  process.stderr.write('Added ' + provider + '/' + label + ' (id=' + entry.id.slice(0, 8) + ')\n');
+  return 0;
+}
+
+async function cmdList(args) {
+  const asJson = args.includes('--json');
+  const file = backend.vaultPath();
+  if (!(await backend.vaultExists(file))) {
+    process.stderr.write('No vault yet. Run: moltypass init\n');
+    return 3;
+  }
+  const vault = await backend.loadVaultFile(file);
+  if (asJson) {
+    process.stdout.write(JSON.stringify(
+      vault.entries.map(e => ({
+        id: e.id,
+        service: e.service,
+        label: e.label,
+        createdAt: e.createdAt,
+        hasNotes: !!e.notesCiphertext,
+      })),
+      null,
+      2,
+    ) + '\n');
+    return 0;
+  }
+  if (!vault.entries.length) {
+    process.stderr.write('Vault is empty. Add a key: moltypass add <provider> <label>\n');
+    return 0;
+  }
+  const rows = vault.entries.map(e => [
+    e.id.slice(0, 8),
+    e.service,
+    e.label,
+    new Date(e.createdAt).toISOString().slice(0, 10),
+    e.notesCiphertext ? 'notes' : '',
+  ]);
+  const widths = [0, 0, 0, 0, 0];
+  for (const r of rows) for (let i = 0; i < 5; i++) widths[i] = Math.max(widths[i], r[i].length);
+  const header = ['ID', 'PROVIDER', 'LABEL', 'CREATED', ''];
+  for (let i = 0; i < 5; i++) widths[i] = Math.max(widths[i], header[i].length);
+  process.stdout.write(header.map((h, i) => h.padEnd(widths[i])).join('  ') + '\n');
+  process.stdout.write(widths.map(w => '-'.repeat(w)).join('  ') + '\n');
+  for (const r of rows) process.stdout.write(r.map((c, i) => c.padEnd(widths[i])).join('  ') + '\n');
+  return 0;
+}
+
+async function cmdRemove(args) {
+  const idPrefix = args[0];
+  if (!idPrefix) {
+    process.stderr.write('Usage: moltypass remove <id-or-prefix>\n');
+    return 2;
+  }
+  const { vault, key } = await backend.getUnlockedVault();
+  const matches = vault.entries.filter(e => e.id.startsWith(idPrefix));
+  if (matches.length === 0) {
+    process.stderr.write('No entry matches ' + idPrefix + '\n');
+    return 3;
+  }
+  if (matches.length > 1) {
+    process.stderr.write('Ambiguous prefix ' + idPrefix + ' — matches ' + matches.length + ' entries.\n');
+    return 3;
+  }
+  const match = matches[0];
+  backend.removeEntry(vault, match.id);
+  await backend.saveVaultFile(vault);
+  process.stderr.write('Removed ' + match.service + '/' + match.label + ' (id=' + match.id.slice(0, 8) + ')\n');
+  void key;
+  return 0;
+}
+
+async function cmdUnlock() {
+  const file = backend.vaultPath();
+  if (!(await backend.vaultExists(file))) {
+    process.stderr.write('No vault yet. Run: moltypass init\n');
+    return 3;
+  }
+  const existing = await backend.loadSession(file);
+  if (existing) {
+    process.stderr.write('Vault already unlocked (session valid).\n');
+    return 0;
+  }
+  const password = await backend.promptPassword();
+  const { raw } = await backend.unlockVault(password, file);
+  await backend.saveSession({
+    keyHex: Buffer.from(raw).toString('hex'),
+    expiresAt: backend.defaultExpiry(),
+    vaultPath: file,
+  });
+  process.stderr.write('Vault unlocked. Session cached for 15 minutes.\n');
+  return 0;
+}
+
+async function cmdLock() {
+  await backend.clearSession();
+  process.stderr.write('Session cleared.\n');
+  return 0;
+}
+
+async function cmdStatus() {
+  const file = backend.vaultPath();
+  const exists = await backend.vaultExists(file);
+  process.stdout.write('Vault:   ' + file + (exists ? '' : ' (not initialized)') + '\n');
+  if (exists) {
+    const session = await backend.loadSession(file);
+    process.stdout.write('Session: ' + (session ? 'unlocked (expires ' + new Date(session.expiresAt).toISOString() + ')' : 'locked') + '\n');
+    const vault = await backend.loadVaultFile(file);
+    process.stdout.write('Entries: ' + vault.entries.length + '\n');
+  } else {
+    process.stdout.write('Session: n/a\n');
+  }
+  return 0;
+}
+
+function cmdDiagnose() {
+  const home = process.env.HOME || process.env.USERPROFILE || '~';
+  process.stdout.write('moltypass diagnose — client configuration paths\n\n');
+  const rows = [
+    ['Vault',                     backend.vaultPath()],
+    ['Session cache',             backend.sessionPath()],
+    ['Claude Desktop (macOS)',    home + '/Library/Application Support/Claude/claude_desktop_config.json'],
+    ['Claude Desktop (Windows)',  '%APPDATA%\\Claude\\claude_desktop_config.json'],
+    ['Cursor',                    home + '/.cursor/mcp.json'],
+    ['Kiro',                      home + '/.kiro/mcp.json'],
+    ['Continue',                  home + '/.continue/config.json'],
+    ['MCP logs (macOS)',          home + '/Library/Logs/Claude/mcp.log'],
+  ];
+  for (const [name, p] of rows) process.stdout.write('  ' + name.padEnd(28) + ' -> ' + p + '\n');
+  process.stdout.write('\nTo connect an MCP client, add:\n');
   process.stdout.write('  { "mcpServers": { "moltypass": { "command": "moltypass-mcp" } } }\n');
-  process.stdout.write('\nDaemon status: NOT RUNNING (v2.5.0-alpha stub)\n');
+  return 0;
 }
 
-function daemonNotRunning(cmd) {
-  process.stderr.write(
-    'moltypass ' + cmd + ': daemon_not_running — the Moltypass daemon has not launched yet.\n' +
-    'Install and unlock Moltypass from https://moltypass.app first, then re-run.\n' +
-    '(v2.5.0-alpha ships the CLI surface; the Native Messaging daemon-client lands in v2.5 T+3.)\n',
+async function cmdExec(args) {
+  // Parse --label + --strict + -- separator.
+  let label; let strict = false; let sepSeen = false; const inner = [];
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (sepSeen) { inner.push(a); continue; }
+    if (a === '--') { sepSeen = true; continue; }
+    if (a === '--label' || a === '-l') { label = args[++i]; continue; }
+    if (a.startsWith('--label=')) { label = a.slice('--label='.length); continue; }
+    if (a === '--strict') { strict = true; continue; }
+    inner.push(a);
+    for (let j = i + 1; j < args.length; j++) inner.push(args[j]);
+    break;
+  }
+  if (inner.length === 0) {
+    process.stderr.write('Usage: moltypass exec [--label <name>] <cmd> [args...]\n');
+    return 2;
+  }
+
+  const { vault, key } = await backend.getUnlockedVault();
+  const tool = catalog.lookupTool(inner[0]);
+  const { env, usedGrants } = await catalog.resolveEnvForTool(
+    tool,
+    vault,
+    key,
+    backend.decryptEntry,
+    label
+      ? (v, service) => backend.findEntry(v, service, label)
+      : backend.findEntry,
   );
-  process.exit(74);
+
+  if (Object.keys(env).length === 0) {
+    if (strict) {
+      process.stderr.write(
+        'moltypass exec: no matching vault entry for tool `' + tool.name + '` ' +
+        '(hints: ' + tool.providerHints.join(', ') + ')\n' +
+        '--strict is set; refusing to run without an injected key.\n',
+      );
+      return 4;
+    }
+    process.stderr.write(
+      'moltypass exec: warning — no vault key matched `' + tool.name + '`; ' +
+      'running with the parent environment unchanged.\n',
+    );
+  } else {
+    const injected = Object.keys(env).sort().join(', ');
+    process.stderr.write('moltypass: injecting ' + injected + ' from vault (' + usedGrants.length + ' grants)\n');
+  }
+
+  const result = await runExec(inner, { env });
+  if (result.redactedStdout.count + result.redactedStderr.count > 0) {
+    process.stderr.write(
+      'moltypass: redacted ' + (result.redactedStdout.count + result.redactedStderr.count) +
+      ' key-shaped string(s) from output ' +
+      '(' + [...new Set([...result.redactedStdout.providers, ...result.redactedStderr.providers])].join(', ') + ')\n',
+    );
+  }
+  return result.exitCode;
 }
 
-if (!head || head === '--help' || head === '-h' || head === 'help') {
-  printHelp(args[1]);
-  process.exit(0);
-}
-if (head === '--version' || head === '-v' || head === 'version') {
-  process.stdout.write('moltypass 2.5.0-alpha\n');
-  process.exit(0);
-}
-if (head === 'status') {
-  process.stdout.write('moltypass daemon: NOT RUNNING (v2.5.0-alpha ships CLI + stubs; daemon lands v2.5 T+3)\n');
-  process.exit(0);
-}
-if (head === 'diagnose') {
-  runDiagnose();
-  process.exit(0);
-}
-if (head === 'exec' || head === 'hook' || head === 'env') {
-  daemonNotRunning(head);
+function notImplemented(name) {
+  process.stderr.write(
+    'moltypass ' + name + ': not yet implemented in v' + VERSION + '.\n' +
+    '(Tracked as v2.5.0 stretch. `moltypass exec` covers the primary case.)\n',
+  );
+  return 74;
 }
 
-process.stderr.write('moltypass: unknown subcommand: ' + head + '\n');
-process.stderr.write('Run `moltypass help` for usage.\n');
-process.exit(2);
+main()
+  .then((code) => process.exit(code == null ? 0 : code))
+  .catch((err) => {
+    process.stderr.write('moltypass: ' + (err instanceof Error ? err.message : String(err)) + '\n');
+    if (process.env.MOLTYPASS_TRACE && err instanceof Error && err.stack) process.stderr.write(err.stack + '\n');
+    process.exit(1);
+  });
